@@ -30,7 +30,7 @@ const form = reactive({
 });
 
 const handleLogin = () => {
-  router.push('/');
+  router.push('/home');
 };
 </script>
 

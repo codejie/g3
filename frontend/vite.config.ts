@@ -11,5 +11,8 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  define: {
+    'import.meta.env.VITE_OPENCODE_URL': JSON.stringify(process.env.OPENCODE_URL || 'http://127.0.0.1:10090')
   }
 });
