@@ -1,0 +1,153 @@
+import type { FastifyInstance } from 'fastify';
+import { loginHandler, registerHandler, logoutHandler, profileHandler } from './handler';
+import { authenticate } from '../../middleware/auth';
+
+const loginSchema = {
+  description: 'User login',
+  tags: ['User'],
+  body: {
+    type: 'object',
+    required: ['username', 'password'],
+    properties: {
+      requestId: { type: 'string' },
+      username: { type: 'string', description: 'Username' },
+      password: { type: 'string', description: 'Password' }
+    }
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        code: { type: 'number' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            token: {
+              type: 'object',
+              properties: {
+                token: { type: 'string' },
+                expires_at: { type: 'number' }
+              }
+            },
+            profile: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                user_id: { type: 'string' },
+                name: { type: 'string' },
+                email: { type: 'string' },
+                nickname: { type: 'string' },
+                avatar: { type: 'string' },
+                gender: { type: 'string' },
+                description: { type: 'string' },
+                department: { type: 'string' },
+                remark: { type: 'string' }
+              }
+            },
+            permissions: { type: 'array', items: { type: 'string' } }
+          }
+        }
+      }
+    }
+  }
+};
+
+const registerSchema = {
+  description: 'User registration',
+  tags: ['User'],
+  body: {
+    type: 'object',
+    required: ['username', 'password'],
+    properties: {
+      requestId: { type: 'string' },
+      username: { type: 'string', description: 'Username' },
+      password: { type: 'string', description: 'Password' },
+      role: { type: 'string', description: 'User role (default: user)' }
+    }
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        code: { type: 'number' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' }
+          }
+        }
+      }
+    }
+  }
+};
+
+const logoutSchema = {
+  description: 'User logout',
+  tags: ['User'],
+  body: {
+    type: 'object',
+    properties: {
+      requestId: { type: 'string' }
+    }
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        code: { type: 'number' },
+        message: { type: 'string' }
+      }
+    }
+  }
+};
+
+const profileSchema = {
+  description: 'Get user profile',
+  tags: ['User'],
+  body: {
+    type: 'object',
+    properties: {
+      requestId: { type: 'string' }
+    }
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        code: { type: 'number' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            profile: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                user_id: { type: 'string' },
+                name: { type: 'string' },
+                email: { type: 'string' },
+                nickname: { type: 'string' },
+                avatar: { type: 'string' },
+                gender: { type: 'string' },
+                description: { type: 'string' },
+                department: { type: 'string' },
+                remark: { type: 'string' }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+export async function userRoutes(fastify: FastifyInstance) {
+  fastify.post('/api/user/login', { schema: loginSchema }, loginHandler);
+  fastify.post('/api/user/register', { schema: registerSchema }, registerHandler);
+  fastify.post('/api/user/logout', { preHandler: [authenticate], schema: logoutSchema }, logoutHandler);
+  fastify.post('/api/user/profile', { preHandler: [authenticate], schema: profileSchema }, profileHandler);
+}
+
+export default userRoutes;

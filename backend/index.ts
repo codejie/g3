@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import { readFile } from 'fs/promises';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -9,22 +10,34 @@ const fastify = Fastify({
   logger: true
 });
 
+await fastify.register(cors, {
+  origin: true,
+  credentials: true
+});
+
 async function loadEnv() {
-  try {
-    const envPath = resolve(__dirname, 'env');
-    const envContent = await readFile(envPath, 'utf-8');
-    envContent.split('\n').forEach(line => {
-      const [key, value] = line.split('=');
-      if (key && value) {
-        process.env[key.trim()] = value.trim();
-      }
-    });
-  } catch (err) {
-    console.log('No env file found, using defaults');
+  const envPath = resolve(__dirname, '.env');
+  const envContent = await readFile(envPath, 'utf-8');
+  envContent.split('\n').forEach(line => {
+    const [key, value] = line.split('=');
+    if (key && value) {
+      process.env[key.trim()] = value.trim();
+    }
+  });
+
+  if (!process.env.VITE_BACKEND_PORT) {
+    throw new Error('VITE_BACKEND_PORT is not configured in .env');
   }
 }
 
 await loadEnv();
+
+await import('./src/config/schema.js');
+console.log('Database initialized');
+
+const { default: userRoutes } = await import('./src/modules/user/routes.js');
+fastify.register(userRoutes);
+console.log('User routes loaded');
 
 fastify.get('/', async () => {
   return { status: 'ok', service: 'G3 Backend' };
@@ -32,7 +45,7 @@ fastify.get('/', async () => {
 
 const start = async () => {
   try {
-    const port = parseInt(process.env.PORT || '3000');
+    const port = parseInt(process.env.VITE_BACKEND_PORT);
     await fastify.listen({ port, host: '0.0.0.0' });
     console.log(`Server running on port ${port}`);
   } catch (err) {

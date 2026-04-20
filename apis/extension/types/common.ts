@@ -10,7 +10,7 @@ export type SortInfo = {
 }
 
 export interface BaseRequest {
-  requestId: string // Request ID, make uuid and convert to 8-bytes hash
+  requestId?: string // Request ID, make uuid and convert to 8-bytes hash
 }
 
 export interface BaseResponse<RESULT = any> {

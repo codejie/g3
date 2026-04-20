@@ -142,9 +142,9 @@ import { useMessageStore } from '../store/messageStore';
 import { useEventStore } from '../store/eventStore';
 import { renderMarkdown } from '../utils/markdownUtils';
 import { processPartText } from '../utils/thinkingParser';
-import Sidebar from '../components/Sidebar.vue';
-import WorkspaceSidebar from '../components/WorkspaceSidebar.vue';
-import ChatInput from '../components/ChatInput.vue';
+import Sidebar from './components/Sidebar.vue';
+import WorkspaceSidebar from './components/WorkspaceSidebar.vue';
+import ChatInput from './components/ChatInput.vue';
 import type { Session } from '../types';
 
 // 默认模型配置常量

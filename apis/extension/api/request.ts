@@ -11,10 +11,14 @@ const defaultConfig: RequestConfig = {
 }
 
 export function setConfig(config: Partial<RequestConfig>) {
+  console.log('[request.ts] setConfig called, config:', config)
+  console.log('[request.ts] defaultConfig before:', JSON.stringify(defaultConfig))
   Object.assign(defaultConfig, config)
+  console.log('[request.ts] defaultConfig after:', JSON.stringify(defaultConfig))
 }
 
 export function getBaseURL(): string {
+  console.log('[request.ts] getBaseURL returns:', defaultConfig.baseURL)
   return defaultConfig.baseURL
 }
 
@@ -27,7 +31,12 @@ async function request<T>(
   path: string,
   body?: unknown
 ): Promise<T> {
-  const url = new URL(path, defaultConfig.baseURL)
+  const hasLeadingSlash = path.startsWith('/')
+  const fullURL = hasLeadingSlash 
+    ? `${defaultConfig.baseURL}${path}` 
+    : new URL(path, defaultConfig.baseURL).toString()
+  console.log('[request.ts] request - method:', method, 'path:', path, 'fullURL:', fullURL)
+  const url = new URL(fullURL)
 
   const response = await fetch(url.toString(), {
     method,

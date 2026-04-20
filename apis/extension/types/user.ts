@@ -17,6 +17,7 @@ export interface User {
   id: string
   username: string
   password: string
+  role: string
   disabled: number
   profile_id: string
   created: number

@@ -36,6 +36,7 @@
   - id: 用户ID，唯一标识符
   - username: 用户名，字符串类型
   - password: 用户密码，字符串类型（实际存储时应加密处理）
+  - role: 用户角色，字符串类型（如admin、user等）,default为user
   - disabled: 用户是否禁用，int类型（0表示启用，1表示禁用）,default为0
   - profile_id: 用户资料ID，关联Profile实体
   - created: 用户创建时间，日期时间类型, 当前时间戳

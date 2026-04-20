@@ -1,8 +1,21 @@
 import Database from 'better-sqlite3'
-import { resolve } from 'path'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
+import { mkdirSync } from 'fs'
+import { createHash } from 'crypto'
+import { v4 as uuidv4 } from 'uuid'
 
-const dbPath = process.env.DB_PATH || './data/g3.db'
-const db = new Database(resolve(dbPath))
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+const dbPath = resolve(process.cwd(), process.env.DB_PATH || './data/g3.db')
+const dbDir = resolve(dbPath, '..')
+mkdirSync(dbDir, { recursive: true })
+
+const db = new Database(dbPath)
+
+function hashPassword(password: string): string {
+  return createHash('sha256').update(password).digest('hex')
+}
 
 db.exec(`
 -- 用户资料表
@@ -26,6 +39,7 @@ CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
+  role TEXT DEFAULT 'user',
   disabled INTEGER DEFAULT 0,
   profile_id TEXT,
   created_at INTEGER DEFAULT (strftime('%s', 'now')),
@@ -97,6 +111,27 @@ CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 CREATE INDEX IF NOT EXISTS idx_log_entries_user_id ON log_entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_log_entries_action ON log_entries(action);
 CREATE INDEX IF NOT EXISTS idx_log_entries_created_at ON log_entries(created_at);
+`)
+
+const currentTime = Math.floor(Date.now() / 1000)
+const hashedPassword = hashPassword('123456')
+
+const adminUserId = uuidv4()
+const adminProfileId = uuidv4()
+const testerUserId = uuidv4()
+const testerProfileId = uuidv4()
+
+db.exec(`
+-- 插入管理员用户
+INSERT OR IGNORE INTO profiles (id, user_id, name, email, nickname, avatar, gender, description, department, remark, created_at, updated_at)
+VALUES
+('${adminProfileId}', '${adminUserId}', 'Administrator', 'admin@g3.local', 'Admin', NULL, 'other', 'System Administrator', 'IT', 'Super admin user', ${currentTime}, ${currentTime}),
+('${testerProfileId}', '${testerUserId}', 'Test User', 'tester@g3.local', 'Tester', NULL, 'male', 'Test account for testing', 'QA', 'Test user', ${currentTime}, ${currentTime});
+
+INSERT OR IGNORE INTO users (id, username, password, role, disabled, profile_id, created_at, updated_at)
+VALUES
+('${adminUserId}', 'admin', '${hashedPassword}', 'admin', 0, '${adminProfileId}', ${currentTime}, ${currentTime}),
+('${testerUserId}', 'tester', '${hashedPassword}', 'user', 0, '${testerProfileId}', ${currentTime}, ${currentTime});
 `)
 
 export default db

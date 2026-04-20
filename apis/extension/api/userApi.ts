@@ -1,4 +1,4 @@
-import { post } from './request'
+import { post, setConfig } from './request'
 import type {
   LoginRequest,
   LoginResponse,
@@ -14,15 +14,17 @@ import type {
 } from '../types/user'
 
 export const userApi = {
-  login: (data: LoginRequest) => post<LoginResponse>('/user/login', data),
+  login: (data: LoginRequest) => post<LoginResponse>('user/login', data),
 
-  logout: () => post<LogoutResponse>('/user/logout'),
+  logout: () => post<LogoutResponse>('user/logout'),
 
-  refreshToken: (data: RefreshTokenRequest) => post<RefreshTokenResponse>('/user/refresh', data),
+  refreshToken: (data: RefreshTokenRequest) => post<RefreshTokenResponse>('user/refresh', data),
 
-  register: (data: RegisterRequest) => post<RegisterResponse>('/user/register', data),
+  register: (data: RegisterRequest) => post<RegisterResponse>('user/register', data),
 
-  getProfile: (data: ProfileRequest) => post<ProfileResponse>('/user/profile', data),
+  getProfile: (data: ProfileRequest) => post<ProfileResponse>('user/profile', data),
 
-  updateProfile: (data: UpdateProfileRequest) => post<UpdateProfileResponse>('/user/profile/update', data),
+  updateProfile: (data: UpdateProfileRequest) => post<UpdateProfileResponse>('user/profile/update', data),
 }
+
+export { setConfig }
