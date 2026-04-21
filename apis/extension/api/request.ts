@@ -10,15 +10,17 @@ const defaultConfig: RequestConfig = {
   },
 }
 
+let authToken: string | null = null
+
 export function setConfig(config: Partial<RequestConfig>) {
-  console.log('[request.ts] setConfig called, config:', config)
-  console.log('[request.ts] defaultConfig before:', JSON.stringify(defaultConfig))
   Object.assign(defaultConfig, config)
-  console.log('[request.ts] defaultConfig after:', JSON.stringify(defaultConfig))
+}
+
+export function setAuthToken(token: string | null) {
+  authToken = token
 }
 
 export function getBaseURL(): string {
-  console.log('[request.ts] getBaseURL returns:', defaultConfig.baseURL)
   return defaultConfig.baseURL
 }
 
@@ -32,16 +34,25 @@ async function request<T>(
   body?: unknown
 ): Promise<T> {
   const hasLeadingSlash = path.startsWith('/')
-  const fullURL = hasLeadingSlash 
-    ? `${defaultConfig.baseURL}${path}` 
+  const fullURL = hasLeadingSlash
+    ? `${defaultConfig.baseURL}${path}`
     : new URL(path, defaultConfig.baseURL).toString()
-  console.log('[request.ts] request - method:', method, 'path:', path, 'fullURL:', fullURL)
   const url = new URL(fullURL)
+
+  const headers: Record<string, string> = { ...defaultConfig.headers }
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`
+  }
+
+  const hasBody = body !== undefined && body !== null
+  if (!hasBody) {
+    delete headers['Content-Type']
+  }
 
   const response = await fetch(url.toString(), {
     method,
-    headers: defaultConfig.headers,
-    body: body ? JSON.stringify(body) : undefined,
+    headers,
+    body: hasBody ? JSON.stringify(body) : undefined,
   })
 
   if (!response.ok) {

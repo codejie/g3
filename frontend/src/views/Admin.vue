@@ -22,12 +22,14 @@
 
 <style scoped>
 .admin-container {
-  height: 100vh;
+  height: var(--app-height, 100vh);
+  display: flex;
 }
 
 .sidebar {
   background: #1e3a5f;
   color: #fff;
+  height: 100%;
 }
 
 .logo {
@@ -35,5 +37,9 @@
   font-size: 20px;
   font-weight: bold;
   text-align: center;
+}
+
+.el-container {
+  height: 100%;
 }
 </style>

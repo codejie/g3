@@ -5,7 +5,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import db from '../../utils/db';
-import type { LoginRequest, RegisterRequest, Profile } from '../../apis/extension/types/user';
+import type { LoginRequest, RegisterRequest, ProfileRequest, Profile } from '../../apis/extension/types/user';
 
 const RESPONSE_CODES = {
   SUCCESS: 0,
@@ -49,12 +49,19 @@ function verifyPassword(password: string, hash: string): boolean {
 }
 
 export async function loginHandler(request: FastifyRequest, reply: FastifyReply) {
-  const { username, password } = request.body as LoginRequest;
+  const { username, password, role: requestedRole } = request.body as LoginRequest;
 
   if (!username || !password) {
     return reply.send({
       code: RESPONSE_CODES.INVALID_REQUEST,
       message: 'Username and password required'
+    });
+  }
+
+  if (!requestedRole) {
+    return reply.send({
+      code: RESPONSE_CODES.INVALID_REQUEST,
+      message: 'Role is required'
     });
   }
 
@@ -73,6 +80,13 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
     });
   }
 
+  if (requestedRole !== user.role) {
+    return reply.send({
+      code: RESPONSE_CODES.UNAUTHORIZED,
+      message: 'Invalid role for this user'
+    });
+  }
+
   const token = uuidv4();
   const expires = Date.now() + 7 * 24 * 60 * 60 * 1000;
 
@@ -80,19 +94,35 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
   tokens.push({ token, userId: user.id, expires });
   await saveTokens(tokens);
 
+  let profile: Profile = {
+    id: user.profile_id || '',
+    user_id: user.id,
+    name: user.username,
+  };
+
+  if (user.profile_id) {
+    const profileRow = db.prepare('SELECT * FROM profiles WHERE id = ?').get(user.profile_id) as any;
+    if (profileRow) {
+      profile = {
+        id: profileRow.id,
+        user_id: profileRow.user_id,
+        name: profileRow.name,
+        email: profileRow.email || undefined,
+        nickname: profileRow.nickname || undefined,
+        avatar: profileRow.avatar || undefined,
+        gender: profileRow.gender || undefined,
+        description: profileRow.description || undefined,
+        department: profileRow.department || undefined,
+        remark: profileRow.remark || undefined,
+      };
+    }
+  }
+
   return reply.send({
     code: RESPONSE_CODES.SUCCESS,
     data: {
       token: { token, expires_at: expires },
-      profile: {
-        id: user.profile_id || '',
-        user_id: user.id,
-        name: user.username,
-        gender: 'other',
-        description: '',
-        department: '',
-        remark: ''
-      }
+      profile
     }
   });
 }
@@ -117,11 +147,6 @@ export async function registerHandler(request: FastifyRequest, reply: FastifyRep
 
   const profileId = uuidv4();
   const currentTime = Math.floor(Date.now() / 1000);
-  
-  const insertProfile = db.prepare(
-    'INSERT INTO profiles (id, user_id, name, gender, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
-  );
-  insertProfile.run(profileId, '', username, 'other', currentTime, currentTime);
 
   const user = userModel.create({
     username,
@@ -129,6 +154,11 @@ export async function registerHandler(request: FastifyRequest, reply: FastifyRep
     role,
     profileId
   });
+
+  const insertProfile = db.prepare(
+    'INSERT INTO profiles (id, user_id, name, gender, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+  );
+  insertProfile.run(profileId, user.id, username, 'other', currentTime, currentTime);
 
   return reply.status(201).send({
     code: RESPONSE_CODES.SUCCESS,
@@ -154,34 +184,52 @@ export async function logoutHandler(request: FastifyRequest, reply: FastifyReply
 }
 
 export async function profileHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { id: profileId } = request.body as ProfileRequest;
   const userId = (request as any).userId;
-  if (!userId) {
+
+  let profileRow: any;
+
+  if (profileId) {
+    profileRow = db.prepare('SELECT * FROM profiles WHERE id = ?').get(profileId) as any;
+  } else {
+    if (!userId) {
+      return reply.send({
+        code: RESPONSE_CODES.UNAUTHORIZED,
+        message: 'Unauthorized'
+      });
+    }
+    const user = userModel.findById(userId);
+    if (!user || !user.profile_id) {
+      return reply.send({
+        code: RESPONSE_CODES.NOT_FOUND,
+        message: 'User or profile not found'
+      });
+    }
+    profileRow = db.prepare('SELECT * FROM profiles WHERE id = ?').get(user.profile_id) as any;
+  }
+
+  if (!profileRow) {
     return reply.send({
-      code: RESPONSE_CODES.UNAUTHORIZED,
-      message: 'Unauthorized'
+      code: RESPONSE_CODES.NOT_FOUND,
+      message: 'Profile not found'
     });
   }
 
-  const user = userModel.findById(userId);
-  if (!user) {
-    return reply.send({
-      code: RESPONSE_CODES.NOT_FOUND,
-      message: 'User not found'
-    });
-  }
+  const profile: Profile = {
+    id: profileRow.id,
+    user_id: profileRow.user_id,
+    name: profileRow.name,
+    email: profileRow.email || undefined,
+    nickname: profileRow.nickname || undefined,
+    avatar: profileRow.avatar || undefined,
+    gender: profileRow.gender || undefined,
+    description: profileRow.description || undefined,
+    department: profileRow.department || undefined,
+    remark: profileRow.remark || undefined,
+  };
 
   return reply.send({
     code: RESPONSE_CODES.SUCCESS,
-    data: {
-      profile: {
-        id: user.profile_id || '',
-        user_id: user.id,
-        name: user.username,
-        gender: 'other',
-        description: '',
-        department: '',
-        remark: ''
-      }
-    }
+    data: { profile }
   });
 }

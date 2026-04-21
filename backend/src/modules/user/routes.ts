@@ -109,7 +109,8 @@ const profileSchema = {
   body: {
     type: 'object',
     properties: {
-      requestId: { type: 'string' }
+      requestId: { type: 'string' },
+      id: { type: 'string', description: 'Profile ID (optional, uses token user if omitted)' }
     }
   },
   response: {

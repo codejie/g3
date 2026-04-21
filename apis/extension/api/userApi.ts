@@ -16,7 +16,7 @@ import type {
 export const userApi = {
   login: (data: LoginRequest) => post<LoginResponse>('user/login', data),
 
-  logout: () => post<LogoutResponse>('user/logout'),
+  logout: () => post<LogoutResponse>('user/logout', {}),
 
   refreshToken: (data: RefreshTokenRequest) => post<RefreshTokenResponse>('user/refresh', data),
 

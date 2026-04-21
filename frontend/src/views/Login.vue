@@ -50,10 +50,13 @@
                 show-password
               />
             </el-form-item>
-            <el-form-item>
-              <el-checkbox v-model="form.isAdmin">管理员登录</el-checkbox>
-            </el-form-item>
-            <el-form-item class="button-group">
+<el-form-item>
+      <el-checkbox v-model="form.isAdmin">管理员登录</el-checkbox>
+    </el-form-item>
+    <el-form-item>
+      <el-checkbox v-model="form.remember">记住登录状态</el-checkbox>
+    </el-form-item>
+    <el-form-item class="button-group">
               <el-button size="large" @click="handleCancel">取消</el-button>
               <el-button type="primary" size="large" @click="handleLogin">登录</el-button>
             </el-form-item>
@@ -65,28 +68,38 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import { userApi, setConfig } from '../apis/extension/api/userApi'
+import { useUserStore } from '../store/userStore'
 import { ElMessage } from 'element-plus'
 
-console.log('[Login.vue] import.meta.env:', JSON.stringify(import.meta.env, null, 2))
 const backendUrl = import.meta.env.VITE_BACKEND_URL
-console.log('[Login.vue] VITE_BACKEND_URL value:', backendUrl)
-console.log('[Login.vue] VITE_BACKEND_URL type:', typeof backendUrl)
 if (!backendUrl) {
   throw new Error('VITE_BACKEND_URL is not configured in .env')
 }
-console.log('[Login.vue] calling setConfig with baseURL:', backendUrl)
 setConfig({ baseURL: backendUrl })
-console.log('[Login.vue] setConfig called successfully')
 
 const router = useRouter()
+const userStore = useUserStore()
+
 const form = reactive({
   username: '',
   password: '',
-  isAdmin: false
+  isAdmin: false,
+  remember: true
+})
+
+onMounted(() => {
+  userStore.loadUser()
+  if (userStore.isLoggedIn) {
+    if (userStore.isAdmin) {
+      router.replace('/admin')
+    } else {
+      router.replace('/home')
+    }
+  }
 })
 
 const handleLogin = async () => {
@@ -103,17 +116,27 @@ const handleLogin = async () => {
       role
     })
 
-    if (response.code === 0) {
-      localStorage.setItem('token', response.data.token.token)
-      localStorage.setItem('userRole', role)
-      if (role === 'admin') {
-        router.push('/admin')
+if (response.code === 0 && response.data) {
+        const userInfo = {
+          id: response.data.profile?.id || '',
+          username: form.username,
+          role: role as 'admin' | 'user',
+          token: response.data.token?.token || '',
+          loginTime: Date.now()
+        }
+        if (form.remember) {
+          userStore.saveUser(userInfo)
+        } else {
+          userStore.setTempUser(userInfo)
+        }
+        if (role === 'admin') {
+          router.push('/admin')
+        } else {
+          router.push('/home')
+        }
       } else {
-        router.push('/home')
+        ElMessage.error(response.message || '登录失败')
       }
-    } else {
-      ElMessage.error(response.message || '登录失败')
-    }
   } catch (error) {
     ElMessage.error('登录请求失败')
     console.error('Login error:', error)
@@ -124,6 +147,7 @@ const handleCancel = () => {
   form.username = ''
   form.password = ''
   form.isAdmin = false
+  form.remember = true
 }
 </script>
 

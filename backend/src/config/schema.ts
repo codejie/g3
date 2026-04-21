@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-const dbPath = resolve(process.cwd(), process.env.DB_PATH || './data/g3.db')
+const dbPath = resolve(process.cwd(), process.env.VITE_DATABASE_FILE || './data/g3.db')
 const dbDir = resolve(dbPath, '..')
 mkdirSync(dbDir, { recursive: true })
 

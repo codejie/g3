@@ -398,9 +398,271 @@
 
 ---
 
+## 2026-04-20 User模块实现与登录功能
+
+### 完成工作
+
+#### 1. User模块后端实现（backend/src/modules/user/）
+- **model.ts**: 用户数据模型
+  - `createUser`: 创建用户
+  - `findUserByUsername`: 按用户名查找
+  - `findUserById`: 按ID查找
+  - `verifyPassword`: 密码验证
+- **handler.ts**: 业务处理
+  - `loginHandler`: 登录处理
+  - `registerHandler`: 注册处理
+  - `logoutHandler`: 登出处理
+  - `profileHandler`: 获取用户资料
+- **routes.ts**: Fastify路由定义
+  - `POST /api/user/login`: 登录
+  - `POST /api/user/register`: 注册
+  - `POST /api/user/logout`: 登出（需认证）
+  - `POST /api/user/profile`: 获取资料（需认证）
+
+#### 2. 认证中间件（backend/src/middleware/auth.ts）
+- JWT token生成和验证
+- Token过期时间：7天
+- 认证装饰器
+
+#### 3. 前端API集成（apis/extension/api/userApi.ts）
+- `login`: 登录
+- `register`: 注册
+- `logout`: 登出
+- `getProfile`: 获取资料
+
+#### 4. 前端登录页面（frontend/src/views/Login.vue）
+- 用户名/密码输入
+- 管理员登录选项
+- 登录成功后保存token到localStorage
+- 跳转路由
+
+### 遇到的问题
+
+#### 1. 数据库路径问题
+- 问题：db.ts和schema.ts各自创建数据库连接
+- 解决：统一从config/index.ts导出数据库连接
+
+#### 2. 相对路径解析
+- 问题：`resolve(__dirname, relativePath)` 相对于源文件目录
+- 解决：改用 `resolve(process.cwd(), relativePath)`
+
+#### 3. Vite .env变量展开
+- 问题：`VITE_BACKEND_URL=http://127.0.0.1:${VITE_BACKEND_PORT}/api` 不会被展开
+- 解决：使用固定URL值
+
+#### 4. Fastify路由类型
+- 问题：handler函数泛型与Body类型不匹配
+- 解决：使用`FastifyRequest`通过类型断言访问body
+
+#### 5. URL拼接问题
+- 问题：`.env`中`VITE_BACKEND_URL=http://127.0.0.1:3001/api`缺少尾随斜杠
+- 解决：改为`http://127.0.0.1:3001/api/`
+- 原因：`new URL('/user/login', 'http://127.0.0.1:3001/api')`会替换路径为`/user/login`
+- 正确：`new URL('user/login', 'http://127.0.0.1:3001/api/')` = `http://127.0.0.1:3001/api/user/login`
+
+### 技术决策
+
+#### API请求URL拼接
+- 当baseURL有尾随斜杠时，path不应有前导斜杠
+- 当前端传入`user/login`时，配合`http://127.0.0.1:3001/api/`可正确拼接
+
+---
+
+## 2026-04-20 用户状态管理与角色访问控制
+
+### 完成工作
+
+#### 1. 用户状态Store（frontend/src/store/userStore.ts）
+- 使用Pinia定义用户状态管理
+- 存储用户信息：id, username, role, token, loginTime
+- 加密存储：Base64编码 + 密钥混淆 + 字符串反转
+- 提供方法：saveUser, loadUser, logout, clearAll
+
+#### 2. 路由守卫（frontend/src/router/authGuard.ts）
+- 导航前检查用户登录状态
+- 已登录用户访问/login自动跳转对应页面（admin->/admin, user->/home）
+- user角色访问/admin自动跳转到/home
+- admin角色访问/home自动跳转到/admin
+- 页面刷新时自动恢复用户状态
+
+#### 3. 路由配置更新（frontend/src/router/index.ts）
+- 添加router.beforeEach全局导航守卫
+- 定义页面meta.roles访问权限
+
+#### 4. 登录页面集成（frontend/src/views/Login.vue）
+- 使用useUserStore管理用户状态
+- 登录成功后保存加密的用户信息
+- 页面加载时检查已登录状态
+
+### 技术决策
+
+#### 用户数据加密方案
+- 采用多层加密：Base64 -> 反转字符串 -> 添加密钥标识
+- 密钥硬编码在代码中，防止直接修改localStorage
+- 解码时验证密钥，确保数据完整性
+
+---
+
 ## 2026-04-17 Thinking标签解析支持
 
 ### 完成工作
 
 #### 1. 创建Thinking标签解析器（utils/thinkingParser.ts）
-- `parseThinkingTags`: 解析文本中的 `<tool_call>think
+- `parseThinkingTags`: 解析文本中的 `<think>...</think>` 或 `<thinking>...</thinking>` 标签
+- 将标签内容转换为 `reasoning` 类型的 part
+- `processPartText`: 处理 part 文本，解析其中的 thinking 标签
+- 支持混合文本：标签前后的普通文本作为 `text` 类型保留
+
+---
+
+## 2026-04-21 数据库Schema重构与扩展API实现
+
+### 完成工作
+
+#### 1. 数据库Schema重构（backend/src/config/schema.ts）
+从原始的 `utils/db.ts` 迁移并重构到 `config/schema.ts`：
+- **主键变更**：所有表从 `INTEGER AUTOINCREMENT` 改为 `TEXT PRIMARY KEY`（UUID格式）
+- **新增表**：
+- profiles: 用户资料表（id, user_id, name, email, nickname, avatar, gender, description, department, remark）
+- tokens: 认证令牌表（id, user_id, token, expires_at）
+- providers: 模型提供者表（id, name, description）
+- models: 模型表（id, provider_id, name, description）
+- log_entries: 日志条目表（id, user_id, action, target, details）
+- **表结构更新**：
+- users: 增加disabled字段、profile_id外键，时间戳改为INTEGER
+- projects: 增加session_id、type、status字段，user_id改为TEXT UUID
+- **索引优化**：为profiles、tokens、models、projects、log_entries创建索引
+- **初始数据**：自动插入admin用户和tester用户（密码均为123456的SHA256哈希）
+- **数据库连接统一**：通过 `config/index.ts` 导出db实例，`utils/db.ts` 仅做转发
+
+#### 2. 后端配置模块（backend/src/config/）
+- **index.ts**: 统一导出数据库连接实例
+- **schema.ts**: 数据库初始化、表结构创建、索引创建、初始数据插入
+
+#### 3. 认证中间件（backend/src/middleware/auth.ts）
+- 基于文件存储的Token认证（tokens.json）
+- `loadTokens`: 从文件加载Token列表
+- `authenticate`: Fastify preHandler中间件，验证Bearer Token
+- Token过期检测
+
+#### 4. User模块后端实现完善（backend/src/modules/user/）
+- **model.ts**: 用户数据模型重构
+- UserRow接口：id(TEXT UUID), username, password, role, disabled, profile_id
+- CRUD方法：findByUsername, findById, create, updatePassword, delete, list, count
+- **handler.ts**: 业务处理重构
+- 密码使用SHA256哈希（createHash('sha256')）
+- Token管理：使用文件存储（data/tokens.json），7天有效期
+- 登录返回Token和Profile信息
+- 注册时同步创建Profile记录
+- **routes.ts**: Fastify路由，带JSON Schema定义
+- `POST /api/user/login`: 登录
+- `POST /api/user/register`: 注册
+- `POST /api/user/logout`: 登出（需认证）
+- `POST /api/user/profile`: 获取资料（需认证）
+
+#### 5. 后端入口更新（backend/index.ts）
+- 集成 @fastify/cors 跨域支持
+- 数据库初始化时导入 schema.js
+- 注册User模块路由
+- 健康检查接口返回 `{ status: 'ok', service: 'G3 Backend' }`
+
+#### 6. 扩展API类型定义完善（apis/extension/types/）
+- **user.ts**: 重构为完整类型定义
+- Profile, User, Token 实体
+- LoginRequest/LoginResult/LoginResponse
+- LogoutResponse
+- RefreshTokenRequest/RefreshTokenResponse
+- RegisterRequest/RegisterResult/RegisterResponse
+- ProfileRequest/ProfileResult/ProfileResponse
+- UpdateProfileRequest/UpdateProfileResult/UpdateProfileResponse
+- **model.ts**: 新增模型相关类型
+- Model, Provider 实体
+- GetModelsRequest/GetModelsResponse
+- AddProviderRequest/AddProviderResponse
+- AddModelRequest/AddModelResponse
+- DeleteModelRequest/DeleteModelResponse
+- DeleteProviderRequest/DeleteProviderResponse
+- **project.ts**: 新增项目相关类型
+- Project 实体（id, user_id, session_id, name, type, description, status）
+- CreateProjectRequest/CreateProjectResponse
+- GetProjectsResponse
+- UpdateProjectRequest/UpdateProjectResponse
+- SetProjectStatusRequest/SetProjectStatusResponse
+- ResetProjectSessionRequest/ResetProjectSessionResponse
+- **file.ts**: 新增文件相关类型
+- FileNode 实体（name, type, size, created, updated）
+- GetFilesRequest/GetFilesResponse
+- DeleteFileRequest/DeleteFileResponse
+- DownloadFileRequest/DownloadFileResponse
+- UploadFileRequest/UploadFileResponse
+- **log.ts**: 新增日志相关类型
+- LogEntry 实体（id, user_id, action, target, details, created）
+- GetLogsRequest/GetLogsResponse（含分页信息）
+- **index.ts**: 统一导出所有类型
+
+#### 7. 扩展API接口实现（apis/extension/api/）
+- **request.ts**: 基于fetch的HTTP请求封装
+- RequestConfig接口（baseURL, headers）
+- setConfig, getBaseURL, getHeaders 配置方法
+- request核心函数：处理URL拼接（支持前导斜杠和非前导斜杠两种情况）
+- CRUD方法：get, post, put, patch, del
+- **userApi.ts**: 用户API（login, logout, refreshToken, register, getProfile, updateProfile）
+- **modelApi.ts**: 模型API（getModels, addProvider, addModel, deleteModel, deleteProvider）
+- **projectApi.ts**: 项目API（create, list, update, setStatus, resetSession）
+- **fileApi.ts**: 文件API（getFiles, delete, download, upload）
+- **logApi.ts**: 日志API（getLogs）
+- **index.ts**: 统一导出
+
+#### 8. 扩展API设计文档（spec/extension_api.md）
+新增接口设计规范文档：
+- 接口规则描述（RESTful风格、POST请求、JSON格式）
+- 接口安全性设计（JWT认证、角色权限控制、UUID格式ID）
+- User模块接口设计（Login, Logout, Token刷新, Register, Profile, 更新Profile）
+- Model模块接口设计（获取模型列表, 增加供应商, 增加模型, 删除模型, 删除供应商）
+- Project模块接口设计（创建项目, 获取项目列表, 更新项目, 设置项目状态, 重置项目Session）
+- File模块接口设计（获取文件列表, 删除文件, 下载文件, 上传文件）
+- Logs模块接口设计（获取日志列表）
+
+### 技术决策
+
+#### 数据库主键方案
+- 从INTEGER自增改为UUID TEXT主键
+- 原因：分布式友好、与前端ID格式统一、便于数据迁移
+
+#### Token存储方案
+- 当前使用文件存储（tokens.json），简单直接
+- 后续可迁移到数据库tokens表
+
+#### 密码哈希方案
+- 使用Node.js内置crypto模块的SHA256
+- 后续可升级为bcrypt等更安全的方案
+
+#### API请求URL拼接
+- 支持两种路径格式：带前导斜杠（直接拼接baseURL）和不带前导斜杠（使用URL构造器）
+- 建议统一使用不带前导斜杠的路径格式
+
+### 遇到的问题
+
+#### 1. 数据库路径解析
+- 问题：db.ts和schema.ts各自创建数据库连接，路径不一致
+- 解决：统一从config/index.ts导出数据库连接，utils/db.ts仅做转发
+
+#### 2. 相对路径解析
+- 问题：`resolve(__dirname, relativePath)` 相对于源文件目录而非工作目录
+- 解决：使用 `resolve(process.cwd(), relativePath)` 基于工作目录解析
+
+#### 3. 数据库表结构演进
+- 问题：原始设计使用INTEGER自增主键，与UUID类型的API设计不一致
+- 解决：重构所有表使用TEXT(UUID)主键，增加profiles、tokens、providers、models等新表
+
+#### 4. 后端模块化设计
+- 问题：初始版本所有逻辑集中在入口文件
+- 解决：按功能拆分为modules（user）、middleware（auth）、config（schema）等模块
+
+### 下一步计划
+- 实现Model模块后端（provider/model CRUD）
+- 实现Project模块后端（项目创建、列表、状态管理、Session关联）
+- 实现File模块后端（文件浏览、上传、下载）
+- 实现Log模块后端（日志记录和查询）
+- Admin管理页面功能实现
+- 前端Home页面对接Project和Session管理

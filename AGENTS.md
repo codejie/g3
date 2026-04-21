@@ -26,14 +26,14 @@ G3工程是由两个独立的服务组成的，分别是前端服务和后端服
 - Axios 1.15.0: 作为HTTP客户端，用于API请求
 
 ### 已实现页面
-- Login.vue: 用户登录页面，提供用户名密码登录（基础UI已完成，待对接后端认证API）
+- Login.vue: 用户登录页面，已对接后端认证API，支持用户名/密码登录、管理员登录选项、登录状态持久化
 - Home.vue: 用户主页面，类似ChatGPT聊天界面，参考g2项目设计
   - 三栏布局：左侧会话列表侧边栏、中间聊天区域、右侧工作空间侧边栏
   - 可折叠的侧边栏设计
   - 响应式CSS变量系统（背景、文本、强调色等）
   - 消息列表和输入组件
   - SSE实时消息流处理
-  - Thinking/Reasoning消息块渲染
+  - Thinking/Reasoning消息块渲染（支持`<tool_call>think`和`<thinking>`标签解析）
   - Markdown渲染支持
   - 已实现OpenCode会话创建和消息发送功能
   - 通过`import.meta.env.VITE_OPENCODE_URL`配置OpenCode服务地址
@@ -45,15 +45,24 @@ G3工程是由两个独立的服务组成的，分别是前端服务和后端服
 - ChatInput.vue: 消息输入组件，包含快捷操作、发送按钮、模式选择
 
 ### 状态管理（frontend/src/store/）
-- chatStore.ts: 聊话管理（会话列表、当前会话、侧边栏状态）
+- chatStore.ts: 聊天管理（会话列表、当前会话、侧边栏状态）
 - messageStore.ts: 消息管理（消息列表、流式消息处理、part增量更新）
 - eventStore.ts: SSE事件管理（连接状态、心跳检测、事件分发）
+- userStore.ts: 用户状态管理（用户信息、登录状态、加密持久化、角色判断）
 
 ### API层（frontend/src/api/）
 - events.ts: SSE连接管理（单例模式、自动重连、心跳检测）
 
+### 路由守卫（frontend/src/router/）
+- authGuard.ts: 导航守卫（登录检查、角色访问控制、自动跳转）
+- index.ts: 路由配置（meta.roles权限定义、全局beforeEach守卫）
+
 ### 工具函数（frontend/src/utils/）
 - markdownUtils.ts: Markdown渲染（markdown-it集成）
+- thinkingParser.ts: Thinking标签解析（支持`<tool_call>think`和`<thinking>`标签，转换为reasoning类型part）
+
+### 类型定义（frontend/src/types/）
+- index.ts: 前端本地类型定义（Message, MessagePart, GlobalEvent, EventCallbacks, Session, Model, ConnectionInfo）
 
 ### 样式系统（frontend/src/style.css）
 - CSS变量定义：背景色(bg-000~400)、文本色(text-100~600)、强调色(accent-brand)、边框色(border-100~300)等
@@ -100,13 +109,48 @@ G3工程是由两个独立的服务组成的，分别是前端服务和后端服
   - `BaseResponse`: 基础响应接口
   - `RESPONSE_CODES`: 响应码常量（SUCCESS, INVALID_REQUEST, VALIDATION_ERROR等）
 - **types/user.ts**: 用户相关类型定义
-  - `User`: 用户实体（id, username, email, password, disabled, created, updated）
-  - `UserToken`: 用户令牌实体（id, user_id, token, expires, disabled, created, updated）
+  - `Profile`: 用户资料实体（id, user_id, name, email, nickname, avatar, gender, description, department, remark）
+  - `User`: 用户实体（id, username, password, role, disabled, profile_id, created, updated）
+  - `Token`: 认证令牌实体（token, expires_at）
   - `LoginRequest/LoginResponse`: 登录请求和响应
-  - `LogoutRequest/LogoutResponse`: 登出请求和响应
+  - `LogoutResponse`: 登出响应
+  - `RefreshTokenRequest/RefreshTokenResponse`: Token刷新请求和响应
   - `RegisterRequest/RegisterResponse`: 注册请求和响应
   - `ProfileRequest/ProfileResponse`: 用户资料请求和响应
-- **api/**: API请求函数（待实现）
+  - `UpdateProfileRequest/UpdateProfileResponse`: 更新用户资料请求和响应
+- **types/model.ts**: 模型相关类型定义
+  - `Model`: 模型实体（id, provider_id, name, description, created）
+  - `Provider`: 模型提供者实体（id, name, description, created）
+  - `GetModelsRequest/GetModelsResponse`: 获取模型列表
+  - `AddProviderRequest/AddProviderResponse`: 增加供应商
+  - `AddModelRequest/AddModelResponse`: 增加模型
+  - `DeleteModelRequest/DeleteModelResponse`: 删除模型
+  - `DeleteProviderRequest/DeleteProviderResponse`: 删除供应商
+- **types/project.ts**: 项目相关类型定义
+  - `Project`: 项目实体（id, user_id, session_id, name, type, description, status, created, updated）
+  - `CreateProjectRequest/CreateProjectResponse`: 创建项目
+  - `GetProjectsResponse`: 获取项目列表
+  - `UpdateProjectRequest/UpdateProjectResponse`: 更新项目
+  - `SetProjectStatusRequest/SetProjectStatusResponse`: 设置项目状态
+  - `ResetProjectSessionRequest/ResetProjectSessionResponse`: 重置项目Session
+- **types/file.ts**: 文件相关类型定义
+  - `FileNode`: 文件节点实体（name, type, size, created, updated）
+  - `GetFilesRequest/GetFilesResponse`: 获取文件列表
+  - `DeleteFileRequest/DeleteFileResponse`: 删除文件
+  - `DownloadFileRequest/DownloadFileResponse`: 下载文件
+  - `UploadFileRequest/UploadFileResponse`: 上传文件
+- **types/log.ts**: 日志相关类型定义
+  - `LogEntry`: 日志条目实体（id, user_id, action, target, details, created）
+  - `GetLogsRequest/GetLogsResponse`: 获取日志列表（含分页）
+- **api/request.ts**: 基于fetch的HTTP请求封装
+  - `RequestConfig`: 请求配置接口
+  - `setConfig`, `getBaseURL`, `getHeaders`: 配置方法
+  - `get`, `post`, `put`, `patch`, `del`: HTTP方法
+- **api/userApi.ts**: 用户API（login, logout, refreshToken, register, getProfile, updateProfile）
+- **api/modelApi.ts**: 模型API（getModels, addProvider, addModel, deleteModel, deleteProvider）
+- **api/projectApi.ts**: 项目API（create, list, update, setStatus, resetSession）
+- **api/fileApi.ts**: 文件API（getFiles, delete, download, upload）
+- **api/logApi.ts**: 日志API（getLogs）
 
 
 ## 后端服务/backend
@@ -120,53 +164,93 @@ G3工程是由两个独立的服务组成的，分别是前端服务和后端服
 - tsx 4.21.0: 作为TypeScript执行和热重载工具
 
 ### 功能设计
-- 用户认证：提供用户登录、注册、权限验证等功能（待实现）
+- 用户认证：提供用户登录、注册、权限验证等功能（已实现User模块）
 - 会话管理：管理用户会话状态，支持会话创建、恢复、删除（待实现）
 - 文件管理：处理文件上传、下载、删除等操作（待实现）
 - 日志记录：记录系统操作日志，支持管理员查询（待实现）
-- API服务：提供RESTful API接口供前端调用（已实现基础健康检查接口）
+- API服务：提供RESTful API接口供前端调用（已实现健康检查和User接口）
 
 ### 已实现功能
 - **index.ts**: Fastify服务入口
   - 环境变量加载（从env文件）
+  - 集成@fastify/cors跨域支持
   - 基础健康检查接口 `GET /`
+  - User模块路由注册
   - 服务启动配置（端口可配置，默认3000）
-- **utils/db.ts**: 数据库初始化和表结构创建
+- **config/schema.ts**: 数据库初始化和表结构创建
+  - 用户资料表(profiles)、用户表(users)、令牌表(tokens)
+  - 模型提供者表(providers)、模型表(models)
+  - 项目表(projects)、日志表(log_entries)
+  - 索引优化、初始数据（admin/tester用户）
+- **config/index.ts**: 统一导出数据库连接实例
+- **middleware/auth.ts**: Token认证中间件
+  - Bearer Token验证
+  - 文件存储Token（data/tokens.json）
+  - Token过期检测
+- **modules/user/**: User模块
+  - model.ts: 用户数据模型（CRUD操作）
+  - handler.ts: 业务处理（登录/注册/登出/资料）
+  - routes.ts: Fastify路由定义（含JSON Schema）
+- **utils/db.ts**: 数据库连接转发（从config导入）
 - **utils/logger.ts**: 简单的日志输出工具
 
 ### 数据库设计
+- profiles表：存储用户资料信息
+  - id: TEXT PRIMARY KEY（UUID）
+  - user_id: TEXT NOT NULL
+  - name: TEXT NOT NULL
+  - email: TEXT
+  - nickname: TEXT
+  - avatar: TEXT
+  - gender: TEXT DEFAULT 'other'
+  - description: TEXT
+  - department: TEXT
+  - remark: TEXT
+  - created_at: INTEGER DEFAULT (strftime('%s', 'now'))
+  - updated_at: INTEGER DEFAULT (strftime('%s', 'now'))
 - users表：存储用户的基本信息
-  - id: INTEGER PRIMARY KEY AUTOINCREMENT
+  - id: TEXT PRIMARY KEY（UUID）
   - username: TEXT UNIQUE NOT NULL
-  - password: TEXT NOT NULL
+  - password: TEXT NOT NULL（SHA256哈希）
   - role: TEXT DEFAULT 'user'
-  - created_at: DATETIME DEFAULT CURRENT_TIMESTAMP
-- projects表：存储用户的项目信息
-  - id: INTEGER PRIMARY KEY AUTOINCREMENT
-  - user_id: INTEGER NOT NULL (外键关联users)
+  - disabled: INTEGER DEFAULT 0
+  - profile_id: TEXT（外键关联profiles）
+  - created_at: INTEGER DEFAULT (strftime('%s', 'now'))
+  - updated_at: INTEGER DEFAULT (strftime('%s', 'now'))
+- tokens表：存储认证令牌
+  - id: TEXT PRIMARY KEY（UUID）
+  - user_id: TEXT NOT NULL（外键关联users）
+  - token: TEXT NOT NULL
+  - expires_at: INTEGER NOT NULL
+  - created_at: INTEGER DEFAULT (strftime('%s', 'now'))
+- providers表：存储模型提供者
+  - id: TEXT PRIMARY KEY（UUID）
   - name: TEXT NOT NULL
   - description: TEXT
-  - created_at: DATETIME DEFAULT CURRENT_TIMESTAMP
-- sessions表：存储用户的会话信息
-  - id: INTEGER PRIMARY KEY AUTOINCREMENT
-  - user_id: INTEGER NOT NULL (外键关联users)
-  - project_id: INTEGER (外键关联projects)
-  - status: TEXT DEFAULT 'active'
-  - created_at: DATETIME DEFAULT CURRENT_TIMESTAMP
-- logs表：存储系统的日志信息
-  - id: INTEGER PRIMARY KEY AUTOINCREMENT
-  - type: TEXT NOT NULL
-  - content: TEXT
-  - user_id: INTEGER (外键关联users)
-  - created_at: DATETIME DEFAULT CURRENT_TIMESTAMP
-- files表：存储用户上传、下载的文件信息
-  - id: INTEGER PRIMARY KEY AUTOINCREMENT
-  - user_id: INTEGER NOT NULL (外键关联users)
+  - created_at: INTEGER DEFAULT (strftime('%s', 'now'))
+- models表：存储模型信息
+  - id: TEXT PRIMARY KEY（UUID）
+  - provider_id: TEXT NOT NULL（外键关联providers）
   - name: TEXT NOT NULL
-  - path: TEXT NOT NULL
-  - type: TEXT
-  - size: INTEGER
-  - created_at: DATETIME DEFAULT CURRENT_TIMESTAMP
+  - description: TEXT
+  - created_at: INTEGER DEFAULT (strftime('%s', 'now'))
+- projects表：存储用户的项目信息
+  - id: TEXT PRIMARY KEY（UUID）
+  - user_id: TEXT NOT NULL（外键关联users）
+  - session_id: TEXT
+  - name: TEXT NOT NULL
+  - type: TEXT NOT NULL
+  - description: TEXT
+  - status: TEXT DEFAULT 'active'
+  - created_at: INTEGER DEFAULT (strftime('%s', 'now'))
+  - updated_at: INTEGER DEFAULT (strftime('%s', 'now'))
+- log_entries表：存储系统的日志信息
+  - id: TEXT PRIMARY KEY（UUID）
+  - user_id: TEXT（外键关联users）
+  - action: TEXT NOT NULL
+  - target: TEXT
+  - details: TEXT
+  - created_at: INTEGER DEFAULT (strftime('%s', 'now'))
 
 # 目录结构
 ```
@@ -174,7 +258,9 @@ G3工程是由两个独立的服务组成的，分别是前端服务和后端服
 ├── README.md # 使用说明
 ├── MEMORY.md # 开发过程记录
 ├── .gitignore # Git忽略配置
-├── env # 环境变量配置
+├── .env # 环境变量配置
+├── spec/ # 接口设计文档
+│   └── extension_api.md # 扩展API接口规则和设计
 ├── apis/ # API接口定义
 │   ├── opencode/ # OpenCode API接口
 │   │   ├── api/ # API请求函数
@@ -186,17 +272,38 @@ G3工程是由两个独立的服务组成的，分别是前端服务和后端服
 │   │   ├── openapi_doc.json # OpenAPI规范文档
 │   │   └── openapi_formatted.json # 格式化的OpenAPI文档
 │   └── extension/ # G3扩展API接口
-│       ├── api/ # API请求函数（待实现）
+│       ├── api/ # API请求函数
+│       │   ├── index.ts # 导出文件
+│       │   ├── request.ts # 基于fetch的HTTP请求封装
+│       │   ├── userApi.ts # 用户API
+│       │   ├── modelApi.ts # 模型API
+│       │   ├── projectApi.ts # 项目API
+│       │   ├── fileApi.ts # 文件API
+│       │   └── logApi.ts # 日志API
 │       └── types/ # 类型定义
+│           ├── index.ts # 导出文件
 │           ├── common.ts # 公共类型定义
-│           └── user.ts # 用户相关类型
+│           ├── user.ts # 用户相关类型
+│           ├── model.ts # 模型相关类型
+│           ├── project.ts # 项目相关类型
+│           ├── file.ts # 文件相关类型
+│           └── log.ts # 日志相关类型
 ├── backend/ # 后端服务
-│   ├── data/ # 数据库文件目录
+│   ├── data/ # 数据文件目录（数据库、tokens.json）
 │   ├── src/
 │   │   ├── apis -> ../../apis # API接口文件（符号链接）
-│   │   ├── modules/ # 业务模块（待实现）
+│   │   ├── config/ # 配置模块
+│   │   │   ├── index.ts # 导出数据库连接
+│   │   │   └── schema.ts # 数据库Schema定义和初始化
+│   │   ├── middleware/ # 中间件
+│   │   │   └── auth.ts # Token认证中间件
+│   │   ├── modules/ # 业务模块
+│   │   │   └── user/ # User模块
+│   │   │       ├── model.ts # 用户数据模型
+│   │   │       ├── handler.ts # 业务处理
+│   │   │       └── routes.ts # 路由定义
 │   │   └── utils/ # 工具函数
-│   │       ├── db.ts # 数据库初始化和操作
+│   │       ├── db.ts # 数据库连接转发
 │   │       └── logger.ts # 日志工具
 │   ├── dist/ # 编译输出目录
 │   ├── node_modules/ # 依赖包
@@ -208,21 +315,36 @@ G3工程是由两个独立的服务组成的，分别是前端服务和后端服
 │   ├── public/ # 公共资源文件
 │   ├── src/
 │   │   ├── apis -> ../../apis # API接口文件（符号链接）
+│   │   ├── api/ # API层
+│   │   │   └── events.ts # SSE连接管理
 │   │   ├── assets/ # 静态资源文件
-│   │   ├── config/ # 配置文件
+│   │   ├── config/ # 配置文件（预留）
 │   │   ├── locales/ # 国际化文件
 │   │   ├── router/ # 路由文件
-│   │   │   └── index.ts # 路由配置
+│   │   │   ├── index.ts # 路由配置
+│   │   │   └── authGuard.ts # 导航守卫
 │   │   ├── store/ # 状态管理文件
+│   │   │   ├── chatStore.ts # 聊天管理
+│   │   │   ├── messageStore.ts # 消息管理
+│   │   │   ├── eventStore.ts # SSE事件管理
+│   │   │   └── userStore.ts # 用户状态管理
+│   │   ├── types/ # 类型定义
+│   │   │   └── index.ts # 前端本地类型定义
 │   │   ├── utils/ # 工具函数文件
+│   │   │   ├── markdownUtils.ts # Markdown渲染
+│   │   │   └── thinkingParser.ts # Thinking标签解析
 │   │   ├── views/ # 页面视图文件
 │   │   │   ├── components/ # 组件文件
+│   │   │   │   ├── Sidebar.vue # 左侧边栏
+│   │   │   │   ├── WorkspaceSidebar.vue # 右侧工作空间侧边栏
+│   │   │   │   └── ChatInput.vue # 消息输入组件
 │   │   │   ├── Login.vue # 登录页面
 │   │   │   ├── Home.vue # 主页面（ChatGPT风格）
 │   │   │   └── Admin.vue # 管理页面
 │   │   ├── main.ts # 前端入口文件
 │   │   ├── App.vue # 根组件
-│   │   └── style.css # 全局样式文件
+│   │   ├── style.css # 全局样式文件
+│   │   └── vite-env.d.ts # Vite环境变量类型声明
 │   ├── dist/ # 构建输出目录
 │   ├── node_modules/ # 依赖包
 │   ├── env -> ../env # 环境变量配置（符号链接）
@@ -237,3 +359,4 @@ G3工程是由两个独立的服务组成的，分别是前端服务和后端服
 - 在工程实现过程中，Agents需要丰富和更新设计和实现细节，包括功能介绍、技术栈、目录结构等信息，根据设计和实现的需求，进行功能设计、数据库设计、API设计等工作，确保设计和实现的合理性和可行性。
 - 在工程实现过程中，Agents需要将更新和丰富此文档，以确保工程信息的完整性和准确性。
 - 在工程实现过程中，Agents需要与开发人员进行沟通和协作，确保设计和实现的正确性和一致性，将过程中遇到的设计和实现问题进行记录和总结，并记录在MEMORY.md中，供后续参考和改进。
+- 接口设计文档位于 `spec/extension_api.md`，新增模块的接口设计应先在该文档中描述，再生成类型定义和API实现

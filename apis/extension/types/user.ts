@@ -66,7 +66,7 @@ export interface RegisterResult {
 export type RegisterResponse = BaseResponse<RegisterResult>
 
 export interface ProfileRequest extends BaseRequest {
-  id: string
+  id?: string
 }
 
 export interface ProfileResult {
