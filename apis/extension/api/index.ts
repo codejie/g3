@@ -1,4 +1,4 @@
-export { setConfig, setAuthToken, getBaseURL, getHeaders } from './request'
+export { setConfig, setAuthToken, getBaseURL, getHeaders, onAuthFailure } from './request'
 export { get, post, put, patch, del } from './request'
 export * from './userApi'
 export * from './modelApi'

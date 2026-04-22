@@ -67,12 +67,13 @@ CREATE TABLE IF NOT EXISTS providers (
 
 -- 模型表
 CREATE TABLE IF NOT EXISTS models (
-  id TEXT PRIMARY KEY,
-  provider_id TEXT NOT NULL,
-  name TEXT NOT NULL,
-  description TEXT,
-  created_at INTEGER DEFAULT (strftime('%s', 'now')),
-  FOREIGN KEY (provider_id) REFERENCES providers(id)
+id TEXT PRIMARY KEY,
+provider_id TEXT NOT NULL,
+name TEXT NOT NULL,
+description TEXT,
+context_size INTEGER,
+created_at INTEGER DEFAULT (strftime('%s', 'now')),
+FOREIGN KEY (provider_id) REFERENCES providers(id)
 );
 
 -- 项目表
@@ -121,6 +122,12 @@ const adminProfileId = uuidv4()
 const testerUserId = uuidv4()
 const testerProfileId = uuidv4()
 
+const ollamaProviderId = uuidv4()
+const nvidiaProviderId = uuidv4()
+const qwen3ModelId = uuidv4()
+const gemma4ModelId = uuidv4()
+const glm5ModelId = uuidv4()
+
 db.exec(`
 -- 插入管理员用户
 INSERT OR IGNORE INTO profiles (id, user_id, name, email, nickname, avatar, gender, description, department, remark, created_at, updated_at)
@@ -132,6 +139,17 @@ INSERT OR IGNORE INTO users (id, username, password, role, disabled, profile_id,
 VALUES
 ('${adminUserId}', 'admin', '${hashedPassword}', 'admin', 0, '${adminProfileId}', ${currentTime}, ${currentTime}),
 ('${testerUserId}', 'tester', '${hashedPassword}', 'user', 0, '${testerProfileId}', ${currentTime}, ${currentTime});
+
+INSERT OR IGNORE INTO providers (id, name, description, created_at)
+VALUES
+('${ollamaProviderId}', 'ollama', 'ollama local server', ${currentTime}),
+('${nvidiaProviderId}', 'nvidia', 'Nvidia-builder', ${currentTime});
+
+INSERT OR IGNORE INTO models (id, provider_id, name, description, context_size, created_at)
+VALUES
+('${qwen3ModelId}', '${ollamaProviderId}', 'qwen3-7b', 'qwen3', 32768, ${currentTime}),
+('${gemma4ModelId}', '${ollamaProviderId}', 'gemma4-26b', 'good', 131072, ${currentTime}),
+('${glm5ModelId}', '${nvidiaProviderId}', 'z-ai/glm5', 'free', 128000, ${currentTime});
 `)
 
 export default db

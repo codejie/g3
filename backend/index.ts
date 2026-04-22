@@ -39,6 +39,10 @@ const { default: userRoutes } = await import('./src/modules/user/routes.js');
 fastify.register(userRoutes);
 console.log('User routes loaded');
 
+const { default: modelRoutes } = await import('./src/modules/model/routes.js');
+fastify.register(modelRoutes);
+console.log('Model routes loaded');
+
 fastify.get('/', async () => {
   return { status: 'ok', service: 'G3 Backend' };
 });

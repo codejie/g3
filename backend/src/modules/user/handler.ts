@@ -1,11 +1,10 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import userModel from './model';
 import { v4 as uuidv4 } from 'uuid';
-import { readFile, writeFile, mkdir } from 'fs/promises';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import db from '../../utils/db';
+import { createHash } from 'crypto';
 import type { LoginRequest, RegisterRequest, ProfileRequest, Profile } from '../../apis/extension/types/user';
+import { createToken, saveToken, deleteToken } from '../../middleware/auth';
 
 const RESPONSE_CODES = {
   SUCCESS: 0,
@@ -14,31 +13,6 @@ const RESPONSE_CODES = {
   NOT_FOUND: -5,
   CONFLICT: -6,
 };
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const TOKEN_FILE = resolve(__dirname, '../../../data/tokens.json');
-
-interface TokenData {
-  token: string;
-  userId: string;
-  expires: number;
-}
-
-async function loadTokens(): Promise<TokenData[]> {
-  try {
-    const data = await readFile(TOKEN_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
-async function saveTokens(tokens: TokenData[]): Promise<void> {
-  await mkdir(dirname(TOKEN_FILE), { recursive: true });
-  await writeFile(TOKEN_FILE, JSON.stringify(tokens, null, 2));
-}
-
-import { createHash } from 'crypto';
 
 function hashPassword(password: string): string {
   return createHash('sha256').update(password).digest('hex');
@@ -87,12 +61,10 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
     });
   }
 
-  const token = uuidv4();
-  const expires = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  const token = createToken(user.role);
+  const expiresAt = Math.floor((Date.now() + 7 * 24 * 60 * 60 * 1000) / 1000);
 
-  const tokens = await loadTokens();
-  tokens.push({ token, userId: user.id, expires });
-  await saveTokens(tokens);
+  saveToken(user.id, token, expiresAt);
 
   let profile: Profile = {
     id: user.profile_id || '',
@@ -121,7 +93,7 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
   return reply.send({
     code: RESPONSE_CODES.SUCCESS,
     data: {
-      token: { token, expires_at: expires },
+      token: { token, expires_at: expiresAt },
       profile
     }
   });
@@ -176,9 +148,7 @@ export async function logoutHandler(request: FastifyRequest, reply: FastifyReply
   }
 
   const token = authHeader.replace('Bearer ', '');
-  const tokens = await loadTokens();
-  const filtered = tokens.filter(t => t.token !== token);
-  await saveTokens(filtered);
+  deleteToken(token);
 
   return reply.send({ code: RESPONSE_CODES.SUCCESS });
 }

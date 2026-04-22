@@ -22,12 +22,10 @@
             </div>
             <span class="brand-text">G3</span>
           </div>
-          <div class="model-selector">
-            <div class="model-badge">
-              <div class="status-dot" :class="{ active: eventStore.isServerActive }"></div>
-              <span class="model-name">{{ currentModel || '选择模型' }}</span>
-            </div>
-          </div>
+        <ModelSelector
+          :isServerActive="eventStore.isServerActive"
+          @select="handleModelSelect"
+        />
         </div>
         <div class="header-right">
           <button class="header-btn">
@@ -145,7 +143,9 @@ import { processPartText } from '../utils/thinkingParser';
 import Sidebar from './components/Sidebar.vue';
 import WorkspaceSidebar from './components/WorkspaceSidebar.vue';
 import ChatInput from './components/ChatInput.vue';
+import ModelSelector from './components/ModelSelector.vue';
 import type { Session } from '../types';
+import { useModelStore } from '../store/modelStore';
 
 // 默认模型配置常量
 const DEFAULT_PROVIDER_ID = 'nvidia';
@@ -154,9 +154,9 @@ const DEFAULT_MODEL_ID = 'minimaxai/minimax-m2.5';
 const chatStore = useChatStore();
 const messageStore = useMessageStore();
 const eventStore = useEventStore();
+const modelStore = useModelStore();
 
 const message = ref('');
-const currentModel = ref('GPT-4');
 const scrollContainer = ref<HTMLElement | null>(null);
 const showSettings = ref(false);
 const isWaitingForResponse = ref(false);
@@ -234,6 +234,9 @@ const getOpenCodeURL = (): string => {
   return import.meta.env.VITE_OPENCODE_URL || 'http://127.0.0.1:10090';
 };
 
+const handleModelSelect = (providerId: string, modelId: string) => {
+};
+
 const sendMessage = async () => {
   if (!message.value.trim() || chatStore.sending) return;
 
@@ -262,8 +265,8 @@ const sendMessage = async () => {
     await sessionApi.promptAsync(sessionId, {
       parts: [{ type: 'text', text: userMessage }],
       model: {
-        providerID: DEFAULT_PROVIDER_ID,
-        modelID: DEFAULT_MODEL_ID
+        providerID: modelStore.selectedProvider?.name || DEFAULT_PROVIDER_ID,
+        modelID: modelStore.selectedModel?.name || DEFAULT_MODEL_ID
       }
     });
 
@@ -337,52 +340,6 @@ const sendMessage = async () => {
   font-weight: bold;
   color: var(--text-100);
   letter-spacing: -0.02em;
-}
-
-.model-selector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg-100);
-  padding: 6px 12px;
-  border-radius: 9999px;
-  border: 1px solid var(--border-200);
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.model-selector:hover {
-  background: var(--bg-200);
-}
-
-.model-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--text-400);
-  transition: background 0.3s;
-}
-
-.status-dot.active {
-  background: var(--success-100);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.model-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-200);
 }
 
 .header-right {

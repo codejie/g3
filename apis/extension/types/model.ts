@@ -5,6 +5,7 @@ export interface Model {
   provider_id: string
   name: string
   description?: string
+  context_size?: number
   created: number
 }
 
@@ -43,6 +44,7 @@ export interface AddModelRequest extends BaseRequest {
   provider_id: string
   name: string
   description?: string
+  context_size?: number
 }
 
 export interface AddModelResult {

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { loginHandler, registerHandler, logoutHandler, profileHandler } from './handler';
-import { authenticate } from '../../middleware/auth';
+import { authenticateUser, authenticateAdmin } from '../../middleware/auth';
 
 const loginSchema = {
   description: 'User login',
@@ -147,8 +147,8 @@ const profileSchema = {
 export async function userRoutes(fastify: FastifyInstance) {
   fastify.post('/api/user/login', { schema: loginSchema }, loginHandler);
   fastify.post('/api/user/register', { schema: registerSchema }, registerHandler);
-  fastify.post('/api/user/logout', { preHandler: [authenticate], schema: logoutSchema }, logoutHandler);
-  fastify.post('/api/user/profile', { preHandler: [authenticate], schema: profileSchema }, profileHandler);
+  fastify.post('/api/user/logout', { preHandler: [authenticateUser], schema: logoutSchema }, logoutHandler);
+  fastify.post('/api/user/profile', { preHandler: [authenticateUser], schema: profileSchema }, profileHandler);
 }
 
 export default userRoutes;

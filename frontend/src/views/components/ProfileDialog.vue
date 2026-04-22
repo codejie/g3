@@ -45,7 +45,7 @@
     <div v-else class="profile-empty">无法获取个人信息</div>
     <template #footer>
       <div class="dialog-footer">
-        <el-button type="danger" @click="handleLogout">登出 / Logout</el-button>
+        <el-button type="danger" @click="handleLogout">登出</el-button>
         <el-button type="primary" @click="handleClose">确定</el-button>
       </div>
     </template>

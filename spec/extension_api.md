@@ -143,12 +143,15 @@ interface UpdateProfileResult {
   - id: 模型ID，唯一标识符
   - provider_id: 模型提供者ID，关联Provider实体
   - name: 模型名称，字符串类型
+  - context_size: 模型上下文长度，数字类型
+  - disabled: 模型是否禁用，int类型（0表示启用，1表示禁用）,default为0
   - description?: 模型描述信息，字符串类型
   - created: 模型创建时间，日期时间类型
 
 - **Provider**: 模型提供者实体，包含以下字段：
   - id: 提供者ID，唯一标识符
   - name: 提供者名称，字符串类型
+  - disabled: 提供者是否禁用，int类型（0表示启用，1表示禁用）,default为0
   - description?: 提供者描述信息，字符串类型
   - created: 提供者创建时间，日期时间类型
 

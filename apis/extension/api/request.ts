@@ -28,15 +28,20 @@ export function getHeaders(): Record<string, string> {
   return defaultConfig.headers || {}
 }
 
+let onUnauthorized: (() => void) | null = null
+
+export function onAuthFailure(callback: () => void) {
+  onUnauthorized = callback
+}
+
 async function request<T>(
   method: string,
   path: string,
   body?: unknown
 ): Promise<T> {
-  const hasLeadingSlash = path.startsWith('/')
-  const fullURL = hasLeadingSlash
-    ? `${defaultConfig.baseURL}${path}`
-    : new URL(path, defaultConfig.baseURL).toString()
+  const base = defaultConfig.baseURL.replace(/\/+$/, '')
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  const fullURL = `${base}${cleanPath}`
   const url = new URL(fullURL)
 
   const headers: Record<string, string> = { ...defaultConfig.headers }
@@ -54,6 +59,11 @@ async function request<T>(
     headers,
     body: hasBody ? JSON.stringify(body) : undefined,
   })
+
+  if (response.status === 401 || response.status === 403) {
+    if (onUnauthorized) onUnauthorized()
+    throw new Error('Unauthorized')
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: response.statusText }))
