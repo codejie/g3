@@ -666,3 +666,108 @@
 - 实现Log模块后端（日志记录和查询）
 - Admin管理页面功能实现
 - 前端Home页面对接Project和Session管理
+
+---
+
+## 2026-04-22 Model模块与Project模块后端实现
+
+### 完成工作
+
+#### 1. Model模块后端实现（backend/src/modules/model/）
+- **model.ts**: Provider和Model数据模型（CRUD操作）
+- **handler.ts**: 业务处理（getModels, addProvider, addModel, deleteModel, deleteProvider）
+- **routes.ts**: Fastify路由定义（含JSON Schema验证）
+
+#### 2. Project模块后端实现（backend/src/modules/project/）
+- **model.ts**: 项目数据模型（create, findById, listByUserId, update, setStatus, resetSession）
+- **handler.ts**: 业务处理，创建项目时调用OpenCode API获取session_id
+  - createProjectHandler: 创建项目 + OpenCode session
+  - getProjectDetailHandler: 返回 { item, directory: `{user_id}/{project_id}/` }
+  - getProjectsHandler: 列表过滤deleted，按updated_at降序
+  - setProjectStatusHandler: 删除项目时同步删除OpenCode session
+  - resetProjectSessionHandler: 重置时删除旧session、创建新session
+- **routes.ts**: Fastify路由定义
+
+#### 3. File模块后端实现（backend/src/modules/file/）
+- **model.ts**: 文件操作模型
+- **handler.ts**: list/delete/download/upload实现，目录下载自动tar.gz打包
+- **routes.ts**: Fastify路由定义，使用@fastify/multipart处理上传
+
+### 遇到的问题
+
+#### 1. ESM兼容问题（核心）
+- 问题：tsx + Node ESM loader将所有`export const`命名导出放入`default`对象
+- 症状：`import { sessionApi }` 运行时得到 `undefined`
+- 临时workaround：`import * as m` + `(m as any).default || m`
+
+#### 2. Fastify POST路由body要求
+- 问题：Fastify POST路由要求body是object，无body时需默认发送`{}`
+- 解决：`post()`无body时传空对象
+
+#### 3. projectApi.list()参数
+- 问题：`projectApi.list({})`会导致TS报错
+- 解决：`projectApi.list()`不接受参数
+
+---
+
+## 2026-04-24 前端以Project为主的重构
+
+### 完成工作
+
+#### 1. Home.vue项目化重构
+- 无项目时显示"请创建或选择一个项目开始对话"，不显示Chat组件
+- 选择项目后才显示Chat组件
+- currentDirectory ref，directory参数传给promptAsync/messages
+
+#### 2. Sidebar.vue项目化
+- fetchProjectDetail返回 { item, directory }
+- selectProject事件含directory信息
+
+#### 3. chatStore.ts精简
+- saveCurrentProjectId/loadCurrentProjectId持久化到localStorage
+- g3_current_project_id键
+
+#### 4. messageStore.ts更新
+- loadMessages(sessionId, directory?) 从OpenCode加载历史消息
+
+#### 5. 前端401/403处理
+- main.ts注册onAuthFailure回调，自动清除登录状态跳转login
+
+#### 6. 后端tsconfig对齐
+- 改为bundler模式：moduleResolution: "bundler", allowImportingTsExtensions, isolatedModules, noEmit, noUnusedLocals, noUnusedParameters
+
+---
+
+## 2026-04-25 方案A实施：ESM兼容性修复
+
+### 完成工作
+
+#### 1. 添加export default到apis/opencode/api/request.ts
+- 末尾添加`export default { setConfig, getBaseURL, get, post, put, patch, del, globalApi, authApi, ... }`
+- 包含所有30个公共API
+
+#### 2. 添加export default到apis/extension/api/request.ts
+- 末尾添加`export default { setConfig, setAuthToken, getBaseURL, getHeaders, onAuthFailure, get, post, put, patch, del }`
+
+#### 3. 更新backend project handler.ts
+- 从`import * as opencodeModule + .default` workaround
+- 改为干净的`import opencodeApi from '../../apis/opencode/api/request'; const { sessionApi, setConfig } = opencodeApi;`
+
+#### 4. 同步apis/副本
+- 确认backend/src/apis/和frontend/src/apis/为文件副本（非符号链接）
+- 已同步所有变更到副本
+
+#### 5. 验证
+- Backend启动测试通过（端口3001，健康检查正常）
+- Frontend构建测试通过（259ms完成）
+
+### 技术决策
+
+#### 方案A选择
+- 在apis/文件末尾添加`export default`对象
+- Backend用`import api from '...'` + 解构（类型安全）
+- Frontend命名导入不变（Vite自行处理模块解析）
+
+### 遗留问题
+- apis/目录为文件副本而非符号链接，后续变更需手动同步三处（根目录、backend、frontend）
+- 建议后续考虑改为符号链接避免同步问题

@@ -82,7 +82,7 @@ export async function get<T>(path: string): Promise<T> {
 }
 
 export async function post<T>(path: string, body?: unknown): Promise<T> {
-  return request<T>('POST', path, body)
+  return request<T>('POST', path, body ?? {})
 }
 
 export async function put<T>(path: string, body?: unknown): Promise<T> {
@@ -95,4 +95,17 @@ export async function patch<T>(path: string, body?: unknown): Promise<T> {
 
 export async function del<T>(path: string): Promise<T> {
   return request<T>('DELETE', path)
+}
+
+export default {
+  setConfig,
+  setAuthToken,
+  getBaseURL,
+  getHeaders,
+  onAuthFailure,
+  get,
+  post,
+  put,
+  patch,
+  del,
 }

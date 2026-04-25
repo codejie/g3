@@ -2,12 +2,12 @@
   <div class="home-container" :style="{ paddingTop: 'var(--safe-area-inset-top)' }">
     <!-- Left Sidebar -->
     <Sidebar
+      ref="sidebarRef"
       :collapsed="chatStore.isSidebarCollapsed"
-      :sessions="chatStore.sessionList"
-      :currentSessionId="chatStore.currentSession?.id"
+      :currentProjectId="currentProjectId"
       @toggle="chatStore.toggleSidebar"
-      @newChat="handleNewChat"
-      @selectSession="handleSelectSession"
+      @selectProject="handleSelectProject"
+      @deselectProject="handleDeselectProject"
       @openSettings="showSettings = true"
     />
 
@@ -34,24 +34,27 @@
         </div>
       </header>
 
-      <!-- Chat Area -->
-      <div class="chat-area" ref="scrollContainer">
-        <!-- Empty State -->
-        <div v-if="!chatStore.hasSession" class="empty-state">
-          <div class="welcome-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-          </div>
-          <h2 class="welcome-title">欢迎使用 G3</h2>
-          <ChatInput
-            v-model="message"
-            :loading="chatStore.sending"
-            @submit="sendMessage"
-          />
-        </div>
+  <!-- Chat Area -->
+  <div class="chat-area" ref="scrollContainer">
+    <!-- No Project State -->
+    <div v-if="!currentProjectId" class="empty-state">
+      <div class="welcome-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+      </div>
+      <h2 class="welcome-title">欢迎使用 G3</h2>
+      <p class="welcome-desc">请创建或选择一个项目开始对话</p>
+    </div>
 
-        <!-- Chat Messages -->
-        <div v-else class="messages-container">
-          <div class="messages-list">
+    <!-- Chat Messages -->
+    <div v-else class="messages-container">
+      <div v-if="messageStore.loading" class="messages-loading">
+        <div class="waiting-dots">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+      <div v-else class="messages-list">
             <div
               v-for="msg in messageStore.messages"
               :key="msg.info.id"
@@ -144,10 +147,11 @@ import Sidebar from './components/Sidebar.vue';
 import WorkspaceSidebar from './components/WorkspaceSidebar.vue';
 import ChatInput from './components/ChatInput.vue';
 import ModelSelector from './components/ModelSelector.vue';
-import type { Session } from '../types';
+import type { Project } from '../apis/extension/types/project';
+import { projectApi, setConfig as setExtConfig, setAuthToken } from '../apis/extension/api';
 import { useModelStore } from '../store/modelStore';
+import { useUserStore } from '../store/userStore';
 
-// 默认模型配置常量
 const DEFAULT_PROVIDER_ID = 'nvidia';
 const DEFAULT_MODEL_ID = 'minimaxai/minimax-m2.5';
 
@@ -155,20 +159,59 @@ const chatStore = useChatStore();
 const messageStore = useMessageStore();
 const eventStore = useEventStore();
 const modelStore = useModelStore();
+const userStore = useUserStore();
 
 const message = ref('');
 const scrollContainer = ref<HTMLElement | null>(null);
+const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
 const showSettings = ref(false);
 const isWaitingForResponse = ref(false);
+const currentProjectId = ref<string | null>(null);
+const currentProject = ref<Project | null>(null);
+const currentDirectory = ref<string | null>(null);
 
 let unsubscribeSSE: (() => void) | null = null;
 
+const initExtApi = () => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  if (backendUrl) setExtConfig({ baseURL: backendUrl });
+  const token = userStore.token;
+  if (token) setAuthToken(token);
+};
+
+const restoreProject = async () => {
+  const savedProjectId = chatStore.loadCurrentProjectId();
+  if (!savedProjectId) return;
+
+  try {
+    initExtApi();
+    const response = await projectApi.detail({ id: savedProjectId });
+    if (response.code === 0 && response.data) {
+      const data = response.data as any;
+      const project: Project = data.item || data;
+      const directory: string = data.directory || `${project.user_id}/${project.id}/`;
+      if (project.status === 'deleted') {
+        chatStore.saveCurrentProjectId(null);
+        return;
+      }
+      currentProjectId.value = project.id;
+      currentProject.value = project;
+      currentDirectory.value = directory;
+      if (project.session_id) {
+        await messageStore.loadMessages(project.session_id, directory);
+      }
+    } else {
+      chatStore.saveCurrentProjectId(null);
+    }
+  } catch (error) {
+    console.error('[Home] Failed to restore project:', error);
+    chatStore.saveCurrentProjectId(null);
+  }
+};
+
 onMounted(async () => {
-  // Initialize SSE connection
   unsubscribeSSE = eventStore.init();
-  
-  // Fetch existing sessions
-  await chatStore.fetchSessions();
+  await restoreProject();
 });
 
 onUnmounted(() => {
@@ -177,9 +220,7 @@ onUnmounted(() => {
   }
 });
 
-// Auto-scroll to bottom when messages update
 watch(() => messageStore.messages, () => {
-  // 当收到AI回复时，隐藏等待指示器
   const lastMessage = messageStore.messages[messageStore.messages.length - 1];
   if (lastMessage?.info?.role === 'assistant' && lastMessage.parts.length > 0) {
     isWaitingForResponse.value = false;
@@ -197,14 +238,24 @@ const scrollToBottom = async () => {
   }
 };
 
-const handleNewChat = async () => {
-  messageStore.clearMessages();
-  chatStore.resetSession();
+const handleSelectProject = async (project: Project, directory: string) => {
+  currentProjectId.value = project.id;
+  currentProject.value = project;
+  currentDirectory.value = directory;
+  chatStore.saveCurrentProjectId(project.id);
+  if (project.session_id) {
+    await messageStore.loadMessages(project.session_id, directory);
+  } else {
+    messageStore.clearMessages();
+  }
 };
 
-const handleSelectSession = async (session: Session) => {
-  await chatStore.selectSession(session);
-  // TODO: Load messages for the session
+const handleDeselectProject = () => {
+  currentProjectId.value = null;
+  currentProject.value = null;
+  currentDirectory.value = null;
+  chatStore.saveCurrentProjectId(null);
+  messageStore.clearMessages();
 };
 
 // 处理消息的 parts，解析其中的 thinking 标签
@@ -239,36 +290,29 @@ const handleModelSelect = (providerId: string, modelId: string) => {
 
 const sendMessage = async () => {
   if (!message.value.trim() || chatStore.sending) return;
+  if (!currentProject.value?.session_id) return;
 
   const userMessage = message.value;
   message.value = '';
 
-  // Add user message to store
   messageStore.addUserMessage(userMessage);
 
-  // Show waiting indicator
   isWaitingForResponse.value = true;
 
   chatStore.sending = true;
   try {
-    let sessionId = chatStore.currentSession?.id;
-
-    if (!sessionId) {
-      const session = await chatStore.startNewSession();
-      sessionId = session.id;
-    }
+    const sessionId = currentProject.value.session_id;
 
     const baseURL = getOpenCodeURL();
     setConfig({ baseURL });
 
-    // Send message via async API (SSE will handle the response)
     await sessionApi.promptAsync(sessionId, {
       parts: [{ type: 'text', text: userMessage }],
       model: {
         providerID: modelStore.selectedProvider?.name || DEFAULT_PROVIDER_ID,
         modelID: modelStore.selectedModel?.name || DEFAULT_MODEL_ID
       }
-    });
+    }, currentDirectory.value || undefined);
 
   } catch (error) {
     console.error('Error:', error);
@@ -398,7 +442,12 @@ const sendMessage = async () => {
   font-size: 24px;
   font-weight: bold;
   color: var(--text-100);
-  margin-bottom: 24px;
+  margin-bottom: 12px;
+}
+
+.welcome-desc {
+  font-size: 14px;
+  color: var(--text-400);
 }
 
 .messages-container {
@@ -407,6 +456,13 @@ const sendMessage = async () => {
   flex-direction: column;
   overflow: hidden;
   position: relative;
+}
+
+.messages-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .messages-list {

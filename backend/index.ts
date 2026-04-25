@@ -43,13 +43,27 @@ const { default: modelRoutes } = await import('./src/modules/model/routes.js');
 fastify.register(modelRoutes);
 console.log('Model routes loaded');
 
+const { default: projectRoutes } = await import('./src/modules/project/routes.js');
+fastify.register(projectRoutes);
+console.log('Project routes loaded');
+
+await fastify.register(import('@fastify/multipart'), {
+  limits: {
+    fileSize: 100 * 1024 * 1024,
+  },
+});
+
+const { default: fileRoutes } = await import('./src/modules/file/routes.js');
+fastify.register(fileRoutes);
+console.log('File routes loaded');
+
 fastify.get('/', async () => {
   return { status: 'ok', service: 'G3 Backend' };
 });
 
 const start = async () => {
   try {
-    const port = parseInt(process.env.VITE_BACKEND_PORT);
+    const port = parseInt(process.env.VITE_BACKEND_PORT!);
     await fastify.listen({ port, host: '0.0.0.0' });
     console.log(`Server running on port ${port}`);
   } catch (err) {

@@ -1,13 +1,45 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Message, MessagePart } from '../types';
+import { sessionApi, setConfig } from '../apis/opencode/api';
+import { useChatStore } from './chatStore';
 
 export const useMessageStore = defineStore('message', () => {
   const messages = ref<Message[]>([]);
   const isStreaming = ref(false);
+  const loading = ref(false);
 
   const clearMessages = () => {
     messages.value = [];
+  };
+
+  const loadMessages = async (sessionId: string, directory?: string) => {
+    loading.value = true;
+    try {
+      const chatStore = useChatStore();
+      const baseURL = chatStore.getOpenCodeURL();
+      setConfig({ baseURL });
+
+      const data = await sessionApi.messages(sessionId, undefined, directory);
+      if (data && Array.isArray(data)) {
+        messages.value = data.map((m: any) => ({
+          info: {
+            id: m.info.id,
+            role: m.info.role,
+            time: m.info.time,
+          },
+          parts: (m.parts || []).map((p: any) => ({
+            id: p.id,
+            type: p.type || 'text',
+            text: p.text || '',
+          })),
+        }));
+      }
+    } catch (error) {
+      console.error('[MessageStore] Failed to load messages:', error);
+    } finally {
+      loading.value = false;
+    }
   };
 
   const updatePartType = (messageID: string, partID: string, type: string) => {
@@ -99,12 +131,14 @@ export const useMessageStore = defineStore('message', () => {
     }
   };
 
-  return {
-    messages,
-    isStreaming,
-    clearMessages,
-    updatePartType,
-    addUserMessage,
-    handlePartDelta,
-  };
+return {
+  messages,
+  isStreaming,
+  loading,
+  clearMessages,
+  loadMessages,
+  updatePartType,
+  addUserMessage,
+  handlePartDelta,
+};
 });

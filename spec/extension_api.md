@@ -257,7 +257,7 @@ interface CreateProjectRequest extends BaseRequest {
 ```typescript
 interface CreateProjectResult {
   id: string; // 新项目ID
-  session_id: string; // 关联的OpenCode Session ID
+  // session_id: string; // 关联的OpenCode Session ID
 }
 ```
 
@@ -269,6 +269,23 @@ interface CreateProjectResult {
 interface GetProjectsResult {
   items: Project[]; // 项目列表
 }
+```
+
+### 获取项目详情接口
+- **接口描述**: 获取项目详情接口，允许用户获取指定项目的详细信息
+- **请求结构**:
+```typescript
+interface GetProjectDetailRequest extends BaseRequest {
+  id: string; // 项目ID
+}
+```
+- **响应结果数据**:
+```typescript
+interface GetProjectDetailResult {
+  item: Project; // 项目详细信息
+  directory: string; // 项目目录路径，格式为"{user_id}/{project_id}/"，用于opencode的会话中目录指示
+}
+
 ```
 
 ### 更新项目接口

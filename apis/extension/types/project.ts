@@ -20,10 +20,20 @@ export interface CreateProjectRequest extends BaseRequest {
 
 export interface CreateProjectResult {
   id: string
-  session_id: string
 }
 
 export type CreateProjectResponse = BaseResponse<CreateProjectResult>
+
+export interface GetProjectDetailRequest extends BaseRequest {
+  id: string
+}
+
+export interface GetProjectDetailResult {
+  item: Project
+  directory: string
+}
+
+export type GetProjectDetailResponse = BaseResponse<GetProjectDetailResult>
 
 export interface GetProjectsResult {
   items: Project[]

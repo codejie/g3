@@ -73,7 +73,7 @@ G3工程是由两个独立的服务组成的，分别是前端服务和后端服
 ### 已实现的API接口（apis/opencode/）
 基于OpenCode的OpenAPI规范，已生成完整的类型定义和API接口函数：
 - **types/common.ts**: 包含所有类型定义（HealthResponse, Config, Session, Message, Part, Provider等）
-- **api/request.ts**: 封装的HTTP请求函数，基于fetch实现
+- **api/request.ts**: 封装的HTTP请求函数，基于fetch实现（含export default对象，Backend用default import解构，Frontend用命名导入）
 - 基础函数: `get`, `post`, `put`, `patch`, `del`, `setConfig`, `getBaseURL`
 - 模块化API:
   - `globalApi`: 全局健康检查、事件、配置
@@ -142,10 +142,11 @@ G3工程是由两个独立的服务组成的，分别是前端服务和后端服
 - **types/log.ts**: 日志相关类型定义
   - `LogEntry`: 日志条目实体（id, user_id, action, target, details, created）
   - `GetLogsRequest/GetLogsResponse`: 获取日志列表（含分页）
-- **api/request.ts**: 基于fetch的HTTP请求封装
-  - `RequestConfig`: 请求配置接口
-  - `setConfig`, `getBaseURL`, `getHeaders`: 配置方法
-  - `get`, `post`, `put`, `patch`, `del`: HTTP方法
+- **api/request.ts**: 基于fetch的HTTP请求封装（含export default对象，Backend用default import解构，Frontend用命名导入）
+- `RequestConfig`: 请求配置接口
+- `setConfig`, `setAuthToken`, `getBaseURL`, `getHeaders`: 配置方法
+- `onAuthFailure`: 401/403自动回调（前端用于清除登录状态）
+- `get`, `post`, `put`, `patch`, `del`: HTTP方法
 - **api/userApi.ts**: 用户API（login, logout, refreshToken, register, getProfile, updateProfile）
 - **api/modelApi.ts**: 模型API（getModels, addProvider, addModel, deleteModel, deleteProvider）
 - **api/projectApi.ts**: 项目API（create, list, update, setStatus, resetSession）
