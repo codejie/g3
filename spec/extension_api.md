@@ -288,6 +288,23 @@ interface GetProjectDetailResult {
 
 ```
 
+### 激活项目接口
+- **接口描述**: 激活项目接口，用户激活一个项目作为当前工作项目，返回项目信息
+- **请求结构**:
+```typescript
+interface ActivateProjectRequest extends BaseRequest {
+  id: string; // 项目ID
+}
+```
+- **响应结果数据**:
+```typescript
+interface ActivateProjectResult {
+  item: Project; // 项目信息
+  directory: string; // 项目目录路径，格式为"{user_id}/{project_id}/"，用于opencode的会话中目录指示
+}
+```
+
+
 ### 更新项目接口
 - **接口描述**: 更新项目接口，允许用户修改项目的名称、类型和描述信息
 - **请求结构**:

@@ -127,11 +127,14 @@
       </div>
     </main>
 
-    <!-- Right Workspace Sidebar -->
-    <WorkspaceSidebar
-      :collapsed="chatStore.isRightSidebarCollapsed"
-      @toggle="chatStore.toggleRightSidebar"
-    />
+  <!-- Right Workspace Sidebar -->
+  <WorkspaceSidebar
+    :collapsed="chatStore.isRightSidebarCollapsed"
+    :projectId="currentProjectId"
+    :currentPath="workspacePath"
+    @toggle="chatStore.toggleRightSidebar"
+    @pathChange="handlePathChange"
+  />
   </div>
 </template>
 
@@ -169,6 +172,7 @@ const isWaitingForResponse = ref(false);
 const currentProjectId = ref<string | null>(null);
 const currentProject = ref<Project | null>(null);
 const currentDirectory = ref<string | null>(null);
+const workspacePath = ref('/');
 
 let unsubscribeSSE: (() => void) | null = null;
 
@@ -185,7 +189,7 @@ const restoreProject = async () => {
 
   try {
     initExtApi();
-    const response = await projectApi.detail({ id: savedProjectId });
+    const response = await projectApi.activate({ id: savedProjectId });
     if (response.code === 0 && response.data) {
       const data = response.data as any;
       const project: Project = data.item || data;
@@ -194,9 +198,10 @@ const restoreProject = async () => {
         chatStore.saveCurrentProjectId(null);
         return;
       }
-      currentProjectId.value = project.id;
-      currentProject.value = project;
-      currentDirectory.value = directory;
+currentProjectId.value = project.id;
+currentProject.value = project;
+currentDirectory.value = directory;
+workspacePath.value = '/';
       if (project.session_id) {
         await messageStore.loadMessages(project.session_id, directory);
       }
@@ -242,6 +247,7 @@ const handleSelectProject = async (project: Project, directory: string) => {
   currentProjectId.value = project.id;
   currentProject.value = project;
   currentDirectory.value = directory;
+  workspacePath.value = '/';
   chatStore.saveCurrentProjectId(project.id);
   if (project.session_id) {
     await messageStore.loadMessages(project.session_id, directory);
@@ -254,8 +260,13 @@ const handleDeselectProject = () => {
   currentProjectId.value = null;
   currentProject.value = null;
   currentDirectory.value = null;
+  workspacePath.value = '/';
   chatStore.saveCurrentProjectId(null);
   messageStore.clearMessages();
+};
+
+const handlePathChange = (path: string) => {
+  workspacePath.value = path;
 };
 
 // 处理消息的 parts，解析其中的 thinking 标签
@@ -307,6 +318,7 @@ const sendMessage = async () => {
     setConfig({ baseURL });
 
     await sessionApi.promptAsync(sessionId, {
+      agent: 'build-extended',
       parts: [{ type: 'text', text: userMessage }],
       model: {
         providerID: modelStore.selectedProvider?.name || DEFAULT_PROVIDER_ID,

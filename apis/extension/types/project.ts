@@ -35,6 +35,17 @@ export interface GetProjectDetailResult {
 
 export type GetProjectDetailResponse = BaseResponse<GetProjectDetailResult>
 
+export interface ActivateProjectRequest extends BaseRequest {
+  id: string
+}
+
+export interface ActivateProjectResult {
+  item: Project
+  directory: string
+}
+
+export type ActivateProjectResponse = BaseResponse<ActivateProjectResult>
+
 export interface GetProjectsResult {
   items: Project[]
 }

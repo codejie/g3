@@ -3,6 +3,7 @@ import {
   createProjectHandler,
   getProjectsHandler,
   getProjectDetailHandler,
+  activateProjectHandler,
   updateProjectHandler,
   setProjectStatusHandler,
   resetProjectSessionHandler,
@@ -212,6 +213,48 @@ const resetProjectSessionSchema = {
   },
 };
 
+const activateProjectSchema = {
+  description: 'Activate a project',
+  tags: ['Project'],
+  body: {
+    type: 'object',
+    required: ['id'],
+    properties: {
+      requestId: { type: 'string' },
+      id: { type: 'string', description: 'Project ID' },
+    },
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        code: { type: 'number' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            item: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                user_id: { type: 'string' },
+                session_id: { type: 'string' },
+                name: { type: 'string' },
+                type: { type: 'string' },
+                description: { type: 'string' },
+                status: { type: 'string' },
+                created: { type: 'number' },
+                updated: { type: 'number' },
+              },
+            },
+            directory: { type: 'string' },
+          },
+        },
+      },
+    },
+  },
+};
+
 export async function projectRoutes(fastify: FastifyInstance) {
   fastify.post('/api/project/create', { preHandler: [authenticateUser], schema: createProjectSchema }, createProjectHandler);
   fastify.post('/api/project/list', { preHandler: [authenticateUser], schema: getProjectsSchema }, getProjectsHandler);
@@ -219,6 +262,7 @@ export async function projectRoutes(fastify: FastifyInstance) {
   fastify.post('/api/project/update', { preHandler: [authenticateUser], schema: updateProjectSchema }, updateProjectHandler);
   fastify.post('/api/project/status', { preHandler: [authenticateUser], schema: setProjectStatusSchema }, setProjectStatusHandler);
   fastify.post('/api/project/reset-session', { preHandler: [authenticateUser], schema: resetProjectSessionSchema }, resetProjectSessionHandler);
+  fastify.post('/api/project/activate', { preHandler: [authenticateUser], schema: activateProjectSchema }, activateProjectHandler);
 }
 
 export default projectRoutes;

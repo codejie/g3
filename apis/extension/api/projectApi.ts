@@ -5,6 +5,8 @@ import type {
   GetProjectsResponse,
   GetProjectDetailRequest,
   GetProjectDetailResponse,
+  ActivateProjectRequest,
+  ActivateProjectResponse,
   UpdateProjectRequest,
   UpdateProjectResponse,
   SetProjectStatusRequest,
@@ -19,6 +21,8 @@ export const projectApi = {
   list: () => post<GetProjectsResponse>('/project/list'),
 
   detail: (data: GetProjectDetailRequest) => post<GetProjectDetailResponse>('/project/detail', data),
+
+  activate: (data: ActivateProjectRequest) => post<ActivateProjectResponse>('/project/activate', data),
 
   update: (data: UpdateProjectRequest) => post<UpdateProjectResponse>('/project/update', data),
 

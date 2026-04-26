@@ -210,7 +210,7 @@ const fetchProjects = async () => {
 const fetchProjectDetail = async (projectId: string): Promise<{ item: Project; directory: string } | null> => {
   try {
     initApi()
-    const response = await projectApi.detail({ id: projectId })
+    const response = await projectApi.activate({ id: projectId })
     if (response.code === 0 && response.data) {
       const data = response.data as any
       if (data.item) {
@@ -220,7 +220,7 @@ const fetchProjectDetail = async (projectId: string): Promise<{ item: Project; d
     }
     return null
   } catch (error) {
-    console.error('[Sidebar] Failed to fetch project detail:', error)
+    console.error('[Sidebar] Failed to activate project:', error)
     return null
   }
 }

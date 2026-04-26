@@ -10,6 +10,11 @@ import type {
 } from '../../apis/extension/types/project';
 import opencodeApi from '../../apis/opencode/api/request';
 const { sessionApi, setConfig } = opencodeApi;
+import { ensureWorkspace } from '../file/model';
+import { resolve } from 'path';
+import { onProjectActivate } from './hooks';
+
+const WORKSPACE_ROOT = process.env.VITE_WORKSPACE_ROOT || resolve(process.cwd(), 'data/workspace');
 
 const RESPONSE_CODES = {
   SUCCESS: 0,
@@ -17,6 +22,14 @@ const RESPONSE_CODES = {
   NOT_FOUND: -5,
   INTERNAL_ERROR: -7,
 };
+
+export function getProjectDirectory(userId: string, projectId: string): string {
+  return `/${userId}/${projectId}/`;
+}
+
+export function getProjectWorkspacePath(userId: string, projectId: string): string {
+  return resolve(WORKSPACE_ROOT, userId, projectId);
+}
 
 function ensureOpenCodeConfig(): void {
   const baseURL = process.env.VITE_OPENCODE_URL || 'http://127.0.0.1:10090';
@@ -77,6 +90,8 @@ export async function createProjectHandler(request: FastifyRequest, reply: Fasti
     description,
   });
 
+  await ensureWorkspace(userId, project.id);
+
   return reply.send({
     code: RESPONSE_CODES.SUCCESS,
     data: { id: project.id },
@@ -105,7 +120,61 @@ export async function getProjectDetailHandler(request: FastifyRequest, reply: Fa
     code: RESPONSE_CODES.SUCCESS,
     data: {
       item: toProject(project),
-      directory: `${project.user_id}/${project.id}/`,
+      directory: getProjectWorkspacePath(project.user_id, project.id),
+    },
+  });
+}
+
+export async function activateProjectHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { id } = request.body as GetProjectDetailRequest;
+  const userId = (request as any).userId;
+
+  if (!id) {
+    return reply.send({
+      code: RESPONSE_CODES.INVALID_REQUEST,
+      message: 'Project ID is required',
+    });
+  }
+
+  const project = projectModel.findById(id);
+  if (!project) {
+    return reply.send({
+      code: RESPONSE_CODES.NOT_FOUND,
+      message: 'Project not found',
+    });
+  }
+
+  if (project.status === 'deleted') {
+    return reply.send({
+      code: RESPONSE_CODES.INVALID_REQUEST,
+      message: 'Project is deleted',
+    });
+  }
+
+  await ensureWorkspace(project.user_id, project.id);
+
+  // const directory = getProjectDirectory(project.user_id, project.id);
+  const directory = getProjectWorkspacePath(project.user_id, project.id);
+
+  try {
+    await onProjectActivate({
+      userId,
+      project: toProject(project),
+      sessionId: project.session_id,
+      directory,
+      workspacePath: directory // getProjectWorkspacePath(project.user_id, project.id),
+    });
+  } catch (error: any) {
+    console.error(`[Project] Activate hook failed for project ${id}:`, error.message);
+  }
+
+  console.log(`[Project] Activated — userId: ${userId}, projectId: ${id}, directory: ${directory}`);
+
+  return reply.send({
+    code: RESPONSE_CODES.SUCCESS,
+    data: {
+      item: toProject(project),
+      directory,
     },
   });
 }

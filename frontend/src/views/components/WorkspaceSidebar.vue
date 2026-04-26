@@ -35,18 +35,57 @@
       <!-- Header -->
       <div class="sidebar-header">
         <span class="sidebar-title">工作空间</span>
-        <button class="collapse-btn" @click="$emit('toggle')">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
+        <div class="header-actions">
+          <button v-if="projectId" class="action-btn" @click="refreshFiles" title="刷新">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          </button>
+          <button class="collapse-btn" @click="$emit('toggle')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <!-- File Browser Placeholder -->
-      <div class="file-browser">
-        <div class="browser-placeholder">
+  <!-- Path Label -->
+  <div class="path-label">
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+    <span>{{ props.currentPath || '/' }}</span>
+  </div>
+
+  <!-- File Browser -->
+  <div class="file-browser">
+        <!-- No project selected -->
+        <div v-if="!projectId" class="browser-placeholder">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          <span>文件浏览器</span>
+          <span>请先选择项目</span>
+        </div>
+
+        <!-- Loading -->
+        <div v-else-if="loading" class="browser-loading">
+          <div class="waiting-dots">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+        </div>
+
+        <!-- Empty directory -->
+        <div v-else-if="fileTree.length === 0" class="browser-placeholder">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span>目录为空</span>
+        </div>
+
+        <!-- File Tree -->
+        <div v-else class="file-tree">
+          <FileTreeNode
+            v-for="node in fileTree"
+            :key="node.name"
+            :node="node"
+            :depth="0"
+            :projectId="projectId"
+            @navigate="handleNavigate"
+          />
         </div>
       </div>
     </div>
@@ -54,15 +93,94 @@
 </template>
 
 <script setup lang="ts">
-interface Props {
-  collapsed: boolean;
+import { ref, watch } from 'vue';
+import { fileApi, setConfig as setExtConfig, setAuthToken } from '../../apis/extension/api';
+import { useUserStore } from '../../store/userStore';
+import type { FileNode } from '../../apis/extension/types/file';
+import FileTreeNode from './FileTreeNode.vue';
+
+interface TreeNode extends FileNode {
+  children?: TreeNode[];
+  loading?: boolean;
 }
 
-defineProps<Props>();
+interface Props {
+  collapsed: boolean;
+  projectId: string | null;
+  currentPath?: string;
+}
 
-defineEmits<{
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
   (e: 'toggle'): void;
+  (e: 'navigate', path: string): void;
+  (e: 'pathChange', path: string): void;
 }>();
+
+const userStore = useUserStore();
+const fileTree = ref<TreeNode[]>([]);
+const loading = ref(false);
+
+const initExtApi = () => {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  if (backendUrl) setExtConfig({ baseURL: backendUrl });
+  const token = userStore.token;
+  if (token) setAuthToken(token);
+};
+
+const fetchFiles = async (path?: string): Promise<TreeNode[]> => {
+  if (!props.projectId) return [];
+  initExtApi();
+  try {
+    const response = await fileApi.getFiles({
+      project_id: props.projectId,
+      path,
+    });
+    if (response.code === 0 && response.data) {
+      const items = (response.data as any).items || [];
+      return items.map((item: FileNode) => ({
+        ...item,
+        children: item.type === 'directory' ? [] : undefined,
+        loading: false,
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error('[Workspace] Failed to fetch files:', error);
+    return [];
+  }
+};
+
+const loadRootFiles = async () => {
+  if (!props.projectId) {
+    fileTree.value = [];
+    return;
+  }
+  loading.value = true;
+  try {
+    fileTree.value = await fetchFiles();
+  } finally {
+    loading.value = false;
+  }
+};
+
+const refreshFiles = () => {
+  fileTree.value = [];
+  loadRootFiles();
+};
+
+const handleNavigate = (path: string) => {
+  emit('pathChange', `/${path}`);
+};
+
+watch(() => props.projectId, (newId) => {
+  if (newId) {
+    loadRootFiles();
+  } else {
+    fileTree.value = [];
+  }
+}, { immediate: true });
 </script>
 
 <style scoped>
@@ -175,6 +293,30 @@ defineEmits<{
   font-size: 14px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.action-btn {
+  padding: 6px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-400);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  background: var(--bg-100);
+  color: var(--accent-brand);
+}
+
 .collapse-btn {
   padding: 6px;
   border-radius: 6px;
@@ -196,7 +338,32 @@ defineEmits<{
 .file-browser {
   flex: 1;
   overflow: auto;
-  padding: 16px;
+  padding: 8px 0;
+}
+
+.path-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border-100);
+  border-bottom: 1px solid var(--border-100);
+  font-size: 12px;
+  color: var(--text-400);
+  font-family: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace;
+  background: var(--bg-100);
+  flex-shrink: 0;
+}
+
+.path-label svg {
+  flex-shrink: 0;
+  color: var(--text-500);
+}
+
+.path-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .browser-placeholder {
@@ -213,8 +380,49 @@ defineEmits<{
   font-size: 14px;
 }
 
+.browser-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+}
+
+.waiting-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.waiting-dots .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-brand);
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+
+.waiting-dots .dot:nth-child(1) { animation-delay: 0s; }
+.waiting-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+.waiting-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+
+.file-tree {
+  font-size: 13px;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes dotPulse {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

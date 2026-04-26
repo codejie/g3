@@ -4,15 +4,10 @@ import { mkdir, rm, stat, readdir, unlink, rmdir } from 'fs/promises';
 import { createHash } from 'crypto';
 import db from '../../utils/db';
 import { v4 as uuidv4 } from 'uuid';
+import { getProjectWorkspacePath } from '../project/handler';
 
-const PROJECT_ROOT = process.env.PROJECT_ROOT || resolve(process.cwd(), 'workspaces');
-
-export function getProjectWorkspacePath(projectId: string): string {
-  return resolve(PROJECT_ROOT, projectId);
-}
-
-export function getFilePath(projectId: string, relativePath: string): string {
-  const workspace = getProjectWorkspacePath(projectId);
+export function getFilePath(userId: string, projectId: string, relativePath: string): string {
+  const workspace = getProjectWorkspacePath(userId, projectId);
   const fullPath = resolve(workspace, relativePath);
   if (!fullPath.startsWith(workspace)) {
     throw new Error('Path traversal detected');
@@ -20,17 +15,17 @@ export function getFilePath(projectId: string, relativePath: string): string {
   return fullPath;
 }
 
-export async function ensureWorkspace(projectId: string): Promise<string> {
-  const workspace = getProjectWorkspacePath(projectId);
+export async function ensureWorkspace(userId: string, projectId: string): Promise<string> {
+  const workspace = getProjectWorkspacePath(userId, projectId);
   if (!existsSync(workspace)) {
     mkdirSync(workspace, { recursive: true });
   }
   return workspace;
 }
 
-export async function listFiles(projectId: string, relativePath?: string): Promise<any[]> {
-  const workspace = getProjectWorkspacePath(projectId);
-  const targetDir = relativePath ? getFilePath(projectId, relativePath) : workspace;
+export async function listFiles(userId: string, projectId: string, relativePath?: string): Promise<any[]> {
+  const workspace = getProjectWorkspacePath(userId, projectId);
+  const targetDir = relativePath ? getFilePath(userId, projectId, relativePath) : workspace;
 
   if (!existsSync(targetDir)) {
     return [];
@@ -56,8 +51,8 @@ export async function listFiles(projectId: string, relativePath?: string): Promi
   });
 }
 
-export async function deleteFile(projectId: string, relativePath: string): Promise<void> {
-  const fullPath = getFilePath(projectId, relativePath);
+export async function deleteFile(userId: string, projectId: string, relativePath: string): Promise<void> {
+  const fullPath = getFilePath(userId, projectId, relativePath);
   if (!existsSync(fullPath)) {
     throw new Error('File or directory not found');
   }
@@ -70,8 +65,8 @@ export async function deleteFile(projectId: string, relativePath: string): Promi
   }
 }
 
-export async function downloadFile(projectId: string, relativePath: string): Promise<{ stream: NodeJS.ReadableStream; filename: string; isDirectory: boolean }> {
-  const fullPath = getFilePath(projectId, relativePath);
+export async function downloadFile(userId: string, projectId: string, relativePath: string): Promise<{ stream: NodeJS.ReadableStream; filename: string; isDirectory: boolean }> {
+  const fullPath = getFilePath(userId, projectId, relativePath);
   if (!existsSync(fullPath)) {
     throw new Error('File not found');
   }
@@ -84,9 +79,9 @@ export async function downloadFile(projectId: string, relativePath: string): Pro
     if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
 
     const archiveName = `${basename(fullPath) || 'archive'}.tar.gz`;
-    const archivePath = join(tmpDir, `${projectId}-${Date.now()}-${archiveName}`);
+  const archivePath = join(tmpDir, `${projectId}-${Date.now()}-${archiveName}`);
 
-    const workspace = getProjectWorkspacePath(projectId);
+  const workspace = getProjectWorkspacePath(userId, projectId);
     const relativeDir = relativePath;
 
     execSync(`tar -czf "${archivePath}" -C "${workspace}" "${relativeDir}"`, { cwd: workspace });
@@ -105,9 +100,9 @@ export async function downloadFile(projectId: string, relativePath: string): Pro
   };
 }
 
-export async function uploadFile(projectId: string, relativePath: string, fileData: Buffer, filename?: string): Promise<void> {
-  await ensureWorkspace(projectId);
-  const fullPath = getFilePath(projectId, relativePath);
+export async function uploadFile(userId: string, projectId: string, relativePath: string, fileData: Buffer, filename?: string): Promise<void> {
+  await ensureWorkspace(userId, projectId);
+  const fullPath = getFilePath(userId, projectId, relativePath);
 
   const dir = filename ? dirname(fullPath) : fullPath;
   if (!existsSync(dir)) {
@@ -119,9 +114,9 @@ export async function uploadFile(projectId: string, relativePath: string, fileDa
   await writeFile(targetPath, fileData);
 }
 
-export async function saveUploadedFile(projectId: string, relativePath: string, sourcePath: string, filename: string): Promise<void> {
-  await ensureWorkspace(projectId);
-  const targetDir = getFilePath(projectId, relativePath);
+export async function saveUploadedFile(userId: string, projectId: string, relativePath: string, sourcePath: string, filename: string): Promise<void> {
+  await ensureWorkspace(userId, projectId);
+  const targetDir = getFilePath(userId, projectId, relativePath);
 
   if (!existsSync(targetDir)) {
     mkdirSync(targetDir, { recursive: true });

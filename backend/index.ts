@@ -61,7 +61,7 @@ fastify.get('/', async () => {
   return { status: 'ok', service: 'G3 Backend' };
 });
 
-const start = async () => {
+  const start = async () => {
   try {
     const port = parseInt(process.env.VITE_BACKEND_PORT!);
     await fastify.listen({ port, host: '0.0.0.0' });
@@ -71,5 +71,14 @@ const start = async () => {
     process.exit(1);
   }
 };
+
+const gracefulShutdown = async (signal: string) => {
+  console.log(`Received ${signal}, shutting down gracefully...`);
+  await fastify.close();
+  process.exit(0);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 start();
