@@ -97,6 +97,49 @@ export async function del<T>(path: string): Promise<T> {
   return request<T>('DELETE', path)
 }
 
+export async function downloadBlob(path: string, body?: unknown, fallbackName?: string): Promise<{ blob: Blob; filename: string }> {
+  const base = defaultConfig.baseURL.replace(/\/+$/, '')
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  const fullURL = `${base}${cleanPath}`
+  const url = new URL(fullURL)
+
+  const headers: Record<string, string> = {}
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`
+  }
+  if (body !== undefined && body !== null) {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  const hasBody = body !== undefined && body !== null
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    headers,
+    body: hasBody ? JSON.stringify(body) : undefined,
+  })
+
+  if (response.status === 401 || response.status === 403) {
+    if (onUnauthorized) onUnauthorized()
+    throw new Error('Unauthorized')
+  }
+
+  const contentType = response.headers.get('content-type') || ''
+
+  if (!response.ok || contentType.includes('application/json')) {
+    const error = await response.json().catch(() => ({ message: response.statusText }))
+    throw new Error(error.message || `HTTP ${response.status}`)
+  }
+
+  const blob = await response.blob()
+  const disposition = response.headers.get('content-disposition') || ''
+  let filename = fallbackName || 'download'
+  const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+  if (match && match[1]) {
+    filename = decodeURIComponent(match[1].replace(/['"]/g, ''))
+  }
+  return { blob, filename }
+}
+
 export default {
   setConfig,
   setAuthToken,
@@ -108,4 +151,5 @@ export default {
   put,
   patch,
   del,
+  downloadBlob,
 }

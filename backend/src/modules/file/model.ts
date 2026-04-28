@@ -1,10 +1,18 @@
-import { resolve, join, dirname, basename } from 'path';
-import { mkdirSync, existsSync, statSync, readdirSync, unlinkSync, rmdirSync, createReadStream, createWriteStream } from 'fs';
+import { resolve, join, dirname, basename, extname } from 'path';
+import { mkdirSync, existsSync, statSync, readdirSync, unlinkSync, rmdirSync, createReadStream, createWriteStream, readFileSync } from 'fs';
 import { mkdir, rm, stat, readdir, unlink, rmdir } from 'fs/promises';
 import { createHash } from 'crypto';
 import db from '../../utils/db';
 import { v4 as uuidv4 } from 'uuid';
 import { getProjectWorkspacePath } from '../project/handler';
+
+const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico']);
+const BINARY_EXTENSIONS = new Set(['zip', 'tar', 'gz', 'rar', '7z', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'exe', 'dll', 'so', 'dylib', 'woff', 'woff2', 'ttf', 'eot', 'otf', 'mp3', 'mp4', 'avi', 'mov', 'wmv', 'flac', 'ogg', 'wav']);
+
+const MIME_MAP: Record<string, string> = {
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+  webp: 'image/webp', svg: 'image/svg+xml', bmp: 'image/bmp', ico: 'image/x-icon',
+};
 
 export function getFilePath(userId: string, projectId: string, relativePath: string): string {
   const workspace = getProjectWorkspacePath(userId, projectId);
@@ -98,6 +106,46 @@ export async function downloadFile(userId: string, projectId: string, relativePa
     filename: basename(fullPath),
     isDirectory: false,
   };
+}
+
+export async function readFileContent(userId: string, projectId: string, relativePath: string): Promise<{ content: string; language: string; fileType: 'text' | 'image' | 'binary'; mimeType?: string }> {
+  const fullPath = getFilePath(userId, projectId, relativePath);
+  if (!existsSync(fullPath)) {
+    throw new Error('File not found');
+  }
+
+  const fileStat = statSync(fullPath);
+  if (fileStat.isDirectory()) {
+    throw new Error('Cannot read directory');
+  }
+  if (fileStat.size > 10 * 1024) {
+    throw new Error('File too large to preview (max 10KB)');
+  }
+
+  const ext = extname(fullPath).toLowerCase().slice(1);
+
+  if (IMAGE_EXTENSIONS.has(ext)) {
+    const buffer = readFileSync(fullPath);
+    const base64 = buffer.toString('base64');
+    const mimeType = MIME_MAP[ext] || 'application/octet-stream';
+    return { content: base64, language: '', fileType: 'image', mimeType };
+  }
+
+  if (BINARY_EXTENSIONS.has(ext)) {
+    return { content: '', language: '', fileType: 'binary' };
+  }
+
+  const content = readFileSync(fullPath, 'utf-8');
+  const langMap: Record<string, string> = {
+    ts: 'typescript', tsx: 'typescript', js: 'javascript', jsx: 'javascript',
+    vue: 'vue', py: 'python', json: 'json', md: 'markdown', html: 'html',
+    css: 'css', scss: 'scss', less: 'less', yaml: 'yaml', yml: 'yaml',
+    xml: 'xml', sql: 'sql', sh: 'bash', bash: 'bash', go: 'go',
+    rs: 'rust', java: 'java', c: 'c', cpp: 'cpp', h: 'c',
+    toml: 'toml', ini: 'ini', txt: 'text', log: 'text',
+  };
+
+  return { content, language: langMap[ext] || ext || 'text', fileType: 'text' };
 }
 
 export async function uploadFile(userId: string, projectId: string, relativePath: string, fileData: Buffer, filename?: string): Promise<void> {

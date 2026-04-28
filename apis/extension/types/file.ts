@@ -39,3 +39,17 @@ export interface UploadFileRequest extends BaseRequest {
 }
 
 export type UploadFileResponse = BaseResponse<void>
+
+export interface ReadFileRequest extends BaseRequest {
+  project_id: string
+  path: string
+}
+
+export interface ReadFileResult {
+  content: string
+  language: string
+  fileType: 'text' | 'image' | 'binary'
+  mimeType?: string
+}
+
+export type ReadFileResponse = BaseResponse<ReadFileResult>

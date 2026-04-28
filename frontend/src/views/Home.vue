@@ -114,27 +114,25 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Floating Input -->
-          <div class="floating-input">
-            <ChatInput
-              v-model="message"
-              :loading="chatStore.sending"
-              @submit="sendMessage"
-            />
-          </div>
-        </div>
+    <!-- Input Area (flow, not absolute) -->
+    <div class="floating-input">
+      <ChatInput
+        v-model="message"
+        :loading="chatStore.sending"
+        @submit="sendMessage"
+      />
       </div>
-    </main>
+    </div>
+  </main>
 
   <!-- Right Workspace Sidebar -->
-  <WorkspaceSidebar
-    :collapsed="chatStore.isRightSidebarCollapsed"
-    :projectId="currentProjectId"
-    :currentPath="workspacePath"
-    @toggle="chatStore.toggleRightSidebar"
-    @pathChange="handlePathChange"
-  />
+<WorkspaceSidebar
+  :collapsed="chatStore.isRightSidebarCollapsed"
+  :projectId="currentProjectId"
+  @toggle="chatStore.toggleRightSidebar"
+/>
   </div>
 </template>
 
@@ -172,7 +170,6 @@ const isWaitingForResponse = ref(false);
 const currentProjectId = ref<string | null>(null);
 const currentProject = ref<Project | null>(null);
 const currentDirectory = ref<string | null>(null);
-const workspacePath = ref('/');
 
 let unsubscribeSSE: (() => void) | null = null;
 
@@ -200,9 +197,8 @@ const restoreProject = async () => {
       }
 currentProjectId.value = project.id;
 currentProject.value = project;
-currentDirectory.value = directory;
-workspacePath.value = '/';
-      if (project.session_id) {
+  currentDirectory.value = directory;
+  if (project.session_id) {
         await messageStore.loadMessages(project.session_id, directory);
       }
     } else {
@@ -247,7 +243,6 @@ const handleSelectProject = async (project: Project, directory: string) => {
   currentProjectId.value = project.id;
   currentProject.value = project;
   currentDirectory.value = directory;
-  workspacePath.value = '/';
   chatStore.saveCurrentProjectId(project.id);
   if (project.session_id) {
     await messageStore.loadMessages(project.session_id, directory);
@@ -260,16 +255,10 @@ const handleDeselectProject = () => {
   currentProjectId.value = null;
   currentProject.value = null;
   currentDirectory.value = null;
-  workspacePath.value = '/';
   chatStore.saveCurrentProjectId(null);
   messageStore.clearMessages();
 };
 
-const handlePathChange = (path: string) => {
-  workspacePath.value = path;
-};
-
-// 处理消息的 parts，解析其中的 thinking 标签
 const getProcessedParts = (msg: any) => {
   const processedParts: any[] = [];
   
@@ -318,7 +307,7 @@ const sendMessage = async () => {
     setConfig({ baseURL });
 
     await sessionApi.promptAsync(sessionId, {
-      agent: 'build-extended',
+      agent: import.meta.env.VITE_AGENT_BUILD || 'build-extended',
       parts: [{ type: 'text', text: userMessage }],
       model: {
         providerID: modelStore.selectedProvider?.name || DEFAULT_PROVIDER_ID,
@@ -481,7 +470,7 @@ const sendMessage = async () => {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  padding-bottom: 100px;
+  padding-bottom: 0;
 }
 
 .messages-list::-webkit-scrollbar {
@@ -606,13 +595,10 @@ const sendMessage = async () => {
 }
 
 .floating-input {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
   z-index: 10;
   background: linear-gradient(to top, var(--bg-100), transparent);
-  padding: 48px 16px 16px;
+  padding: 12px 64px 16px;
 }
 
 @keyframes fadeIn {

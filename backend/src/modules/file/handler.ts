@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { listFiles, deleteFile, downloadFile, uploadFile, saveUploadedFile, getFilePath, ensureWorkspace } from './model';
+import { listFiles, deleteFile, downloadFile, uploadFile, saveUploadedFile, getFilePath, ensureWorkspace, readFileContent } from './model';
 import { existsSync, statSync, readdirSync } from 'fs';
 import type { GetFilesRequest, DeleteFileRequest, DownloadFileRequest } from '../../apis/extension/types/file';
 import { unlink, rm } from 'fs/promises';
@@ -83,6 +83,31 @@ export async function deleteFileHandler(request: FastifyRequest, reply: FastifyR
   }
 }
 
+export async function readFileHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { project_id, path } = request.body as { project_id: string; path: string };
+  const userId = (request as any).userId;
+
+  if (!project_id || !path) {
+    return reply.send({
+      code: RESPONSE_CODES.INVALID_REQUEST,
+      message: 'Project ID and path are required',
+    });
+  }
+
+  try {
+    const result = await readFileContent(userId, project_id, path);
+    return reply.send({
+      code: RESPONSE_CODES.SUCCESS,
+      data: result,
+    });
+  } catch (error: any) {
+    return reply.send({
+      code: RESPONSE_CODES.NOT_FOUND,
+      message: error.message || 'Failed to read file',
+    });
+  }
+}
+
 export async function downloadFileHandler(request: FastifyRequest, reply: FastifyReply) {
   const { project_id, path } = request.body as DownloadFileRequest;
   const userId = (request as any).userId;
@@ -117,7 +142,11 @@ export async function downloadFileHandler(request: FastifyRequest, reply: Fastif
       reply.raw.setHeader('Content-Length', fileStat.size);
     }
 
-    reply.hijack();
+    const requestOrigin = request.headers.origin || '*';
+  reply.raw.setHeader('Access-Control-Allow-Origin', requestOrigin);
+  reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  reply.hijack();
     stream.pipe(reply.raw);
 
     stream.on('end', () => {

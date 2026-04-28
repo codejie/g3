@@ -29,18 +29,26 @@ function ensureOpenCodeConfig(): void {
   setConfig({ baseURL });
 }
 
-function buildSystemPrompt(ctx: ActivateContext): string {
-  return `You are a helpful AI assistant working in the G3 project workspace.
+function getCurrentTimeString(): string {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const MM = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const HH = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  return `--- ${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss} ---`;
+}
 
-sessionId: ${ctx.sessionId}
-userId: ${ctx.userId}
-Project: ${ctx.project.name}
-Type: ${ctx.project.type}
+function buildSystemPrompt(ctx: ActivateContext): string {
+  return `
+Session Id: ${ctx.sessionId}
+User Id: ${ctx.userId}
+Project Name: ${ctx.project.name}
+Project Type: ${ctx.project.type}
 ${ctx.project.description ? `Description: ${ctx.project.description}` : ''}
 
-Working directory: ${ctx.workspacePath}
-
-Follow the user's instructions carefully. When working with files, always operate within the project workspace.`;
+Project directory: ${ctx.workspacePath}`;
 }
 
 export async function setSystemPromptViaConfig(ctx: ActivateContext): Promise<void> {
@@ -76,8 +84,8 @@ export async function setSystemPromptViaMessage(ctx: ActivateContext): Promise<v
 
     await sessionApi.prompt(ctx.sessionId, {
       system,
-      agent: 'build-extended',
-      parts: [{ type: 'text', text: 'Understood. I will follow the system instructions.' }],
+      agent: process.env.VITE_AGENT_BUILD || 'build-extended',
+      parts: [{ type: 'text', text: `<div style="text-align:center;color:#666">${getCurrentTimeString()}</div>` }],
       noReply: true,
     }, ctx.directory);
 

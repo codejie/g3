@@ -32,25 +32,28 @@
     </div>
 
     <div v-if="!collapsed" class="sidebar-content">
-      <!-- Header -->
-      <div class="sidebar-header">
-        <span class="sidebar-title">工作空间</span>
-        <div class="header-actions">
-          <button v-if="projectId" class="action-btn" @click="refreshFiles" title="刷新">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          </button>
-          <button class="collapse-btn" @click="$emit('toggle')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </button>
-        </div>
-      </div>
+  <!-- Header -->
+  <div class="sidebar-header">
+    <span class="sidebar-title">工作空间</span>
+    <div class="header-actions">
+      <button v-if="projectId" class="action-btn" @click="refreshFiles" title="刷新">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+      <button class="collapse-btn" @click="$emit('toggle')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 
   <!-- Path Label -->
   <div class="path-label">
     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-    <span>{{ props.currentPath || '/' }}</span>
+    <span>{{ currentFullPath }}</span>
+    <button v-if="pathStack.length > 1" class="action-btn back-btn" @click="handleGoBack" title="返回上一级">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
   </div>
 
   <!-- File Browser -->
@@ -76,27 +79,75 @@
           <span>目录为空</span>
         </div>
 
-        <!-- File Tree -->
-        <div v-else class="file-tree">
-          <FileTreeNode
-            v-for="node in fileTree"
-            :key="node.name"
-            :node="node"
-            :depth="0"
-            :projectId="projectId"
-            @navigate="handleNavigate"
-          />
-        </div>
+      <!-- File Tree -->
+      <div v-else class="file-tree">
+        <FileTreeNode
+          v-for="node in fileTree"
+          :key="node.name"
+          :node="node"
+          :depth="0"
+          :projectId="projectId"
+          @navigate="handleNavigate"
+          @preview="handlePreview"
+        />
       </div>
     </div>
+
+    <!-- Preview Panel -->
+    <div
+      v-if="preview.visible"
+      class="preview-panel"
+      :style="{ height: preview.height + 'px' }"
+      @click.stop
+    >
+      <div class="preview-header">
+        <span class="preview-filename">{{ preview.name }}</span>
+        <span v-if="preview.language" class="preview-lang">{{ preview.language }}</span>
+        <span v-else-if="preview.fileType === 'image'" class="preview-lang">image</span>
+        <span v-else-if="preview.fileType === 'binary'" class="preview-lang">binary</span>
+        <button class="preview-close" @click="closePreview">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="preview-resize-handle" @mousedown="startResize"></div>
+      <div v-if="preview.loading" class="preview-loading">
+        <div class="waiting-dots">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+      <div v-else-if="preview.error" class="preview-error">{{ preview.error }}</div>
+      <template v-else>
+        <!-- Image preview -->
+        <div v-if="preview.fileType === 'image' && preview.content" class="preview-image-wrap">
+          <img :src="`data:${preview.mimeType};base64,${preview.content}`" :alt="preview.name" class="preview-image" />
+        </div>
+        <!-- Binary file -->
+        <div v-else-if="preview.fileType === 'binary'" class="preview-binary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>二进制文件，无法预览</span>
+        </div>
+        <!-- Markdown rendered -->
+        <div v-else-if="preview.language === 'markdown' && preview.content" class="preview-markdown" v-html="renderMarkdown(preview.content)"></div>
+        <!-- HTML rendered in sandboxed iframe -->
+        <div v-else-if="preview.language === 'html' && preview.content" class="preview-html-wrap">
+          <iframe class="preview-html" :srcdoc="preview.content" sandbox="allow-scripts allow-same-origin" title="HTML Preview"></iframe>
+        </div>
+        <!-- Code / plain text -->
+        <pre v-else class="preview-code"><code>{{ preview.content }}</code></pre>
+      </template>
+    </div>
+  </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { fileApi, setConfig as setExtConfig, setAuthToken } from '../../apis/extension/api';
 import { useUserStore } from '../../store/userStore';
 import type { FileNode } from '../../apis/extension/types/file';
+import { renderMarkdown } from '../../utils/markdownUtils';
 import FileTreeNode from './FileTreeNode.vue';
 
 interface TreeNode extends FileNode {
@@ -107,20 +158,32 @@ interface TreeNode extends FileNode {
 interface Props {
   collapsed: boolean;
   projectId: string | null;
-  currentPath?: string;
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'toggle'): void;
-  (e: 'navigate', path: string): void;
-  (e: 'pathChange', path: string): void;
 }>();
 
 const userStore = useUserStore();
 const fileTree = ref<TreeNode[]>([]);
 const loading = ref(false);
+const pathStack = ref<string[]>(['/']);
+const currentFullPath = computed(() => pathStack.value[pathStack.value.length - 1]);
+
+const preview = reactive({
+  visible: false,
+  loading: false,
+  name: '',
+  path: '',
+  content: '',
+  language: '',
+  fileType: 'text' as 'text' | 'image' | 'binary',
+  mimeType: '',
+  error: '',
+  height: 0,
+});
 
 const initExtApi = () => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -159,7 +222,8 @@ const loadRootFiles = async () => {
   }
   loading.value = true;
   try {
-    fileTree.value = await fetchFiles();
+    const path = currentFullPath.value === '/' ? undefined : currentFullPath.value.slice(1);
+    fileTree.value = await fetchFiles(path);
   } finally {
     loading.value = false;
   }
@@ -171,15 +235,144 @@ const refreshFiles = () => {
 };
 
 const handleNavigate = (path: string) => {
-  emit('pathChange', `/${path}`);
+  const newPath = currentFullPath.value === '/' ? `/${path}` : `${currentFullPath.value}/${path}`;
+  pathStack.value = [...pathStack.value, newPath];
+  loadRootFiles();
 };
 
+const handleGoBack = () => {
+  if (pathStack.value.length > 1) {
+    pathStack.value = pathStack.value.slice(0, -1);
+    loadRootFiles();
+  }
+};
+
+const handlePreview = async (path: string, name: string, size: number) => {
+  const fullPath = currentFullPath.value === '/' ? path : `${currentFullPath.value.slice(1)}/${path}`;
+  if (size > 10 * 1024) {
+    preview.visible = true;
+    preview.loading = false;
+    preview.name = name;
+    preview.path = fullPath;
+    preview.content = '';
+    preview.language = '';
+    preview.fileType = 'text';
+    preview.mimeType = '';
+    preview.error = '文件超过 10KB，无法预览';
+    preview.height = 120;
+    return;
+  }
+
+  preview.visible = true;
+  preview.loading = true;
+  preview.name = name;
+  preview.path = fullPath;
+  preview.content = '';
+  preview.language = '';
+  preview.fileType = 'text';
+  preview.mimeType = '';
+  preview.error = '';
+  preview.height = getHalfPreviewHeight();
+
+  if (!props.projectId) {
+    preview.error = '未选择项目';
+    preview.loading = false;
+    return;
+  }
+  initExtApi();
+
+  try {
+    const response = await fileApi.readFile({
+      project_id: props.projectId,
+      path: fullPath,
+    });
+    if (response.code === 0 && response.data) {
+      const data = response.data as any;
+      preview.content = data.content || '';
+      preview.language = data.language || '';
+      preview.fileType = data.fileType || 'text';
+      preview.mimeType = data.mimeType || '';
+    } else {
+      preview.error = (response as any).message || '读取文件失败';
+    }
+  } catch (error: any) {
+    preview.error = error.message || '读取文件失败';
+  } finally {
+    preview.loading = false;
+  }
+};
+
+const closePreview = () => {
+  preview.visible = false;
+};
+
+const getHalfPreviewHeight = () => {
+  const el = document.querySelector('.workspace-sidebar');
+  if (el) {
+    return Math.floor(el.clientHeight / 2);
+  }
+  return 300;
+};
+
+const getMaxPreviewHeight = () => {
+  const el = document.querySelector('.workspace-sidebar');
+  if (el) {
+    return Math.floor(el.clientHeight * 2 / 3);
+  }
+  return 400;
+};
+
+let resizing = false;
+let startY = 0;
+let startHeight = 0;
+
+const startResize = (e: MouseEvent) => {
+  e.preventDefault();
+  resizing = true;
+  startY = e.clientY;
+  startHeight = preview.height;
+  document.addEventListener('mousemove', onResizeMove);
+  document.addEventListener('mouseup', onResizeUp);
+};
+
+const onResizeMove = (e: MouseEvent) => {
+  if (!resizing) return;
+  const delta = startY - e.clientY;
+  const maxH = getMaxPreviewHeight();
+  preview.height = Math.max(120, Math.min(maxH, startHeight + delta));
+};
+
+const onResizeUp = () => {
+  resizing = false;
+  document.removeEventListener('mousemove', onResizeMove);
+  document.removeEventListener('mouseup', onResizeUp);
+};
+
+const onDocumentClick = (e: MouseEvent) => {
+  if (!preview.visible) return;
+  const sidebar = document.querySelector('.workspace-sidebar');
+  if (sidebar && sidebar.contains(e.target as Node)) return;
+  closePreview();
+};
+
+onMounted(() => {
+  document.addEventListener('click', onDocumentClick);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', onDocumentClick);
+  document.removeEventListener('mousemove', onResizeMove);
+  document.removeEventListener('mouseup', onResizeUp);
+});
+
 watch(() => props.projectId, (newId) => {
+  pathStack.value = ['/'];
   if (newId) {
     loadRootFiles();
   } else {
     fileTree.value = [];
   }
+  closePreview();
 }, { immediate: true });
 </script>
 
@@ -275,6 +468,7 @@ watch(() => props.projectId, (newId) => {
   display: flex;
   flex-direction: column;
   min-width: 300px;
+  min-height: 0;
   animation: fadeIn 0.3s ease;
 }
 
@@ -339,6 +533,7 @@ watch(() => props.projectId, (newId) => {
   flex: 1;
   overflow: auto;
   padding: 8px 0;
+  min-height: 0;
 }
 
 .path-label {
@@ -364,6 +559,14 @@ watch(() => props.projectId, (newId) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.back-btn {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--accent-brand);
 }
 
 .browser-placeholder {
@@ -424,5 +627,274 @@ watch(() => props.projectId, (newId) => {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+.preview-panel {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-200);
+  background: var(--bg-000);
+  animation: slideUp 0.25s ease;
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 600px;
+    opacity: 1;
+  }
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-100);
+  background: var(--bg-100);
+  flex-shrink: 0;
+}
+
+.preview-filename {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-100);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.preview-lang {
+  font-size: 10px;
+  color: var(--text-500);
+  background: var(--bg-200);
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.preview-close {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-400);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.preview-close:hover {
+  background: var(--bg-200);
+  color: var(--text-200);
+}
+
+.preview-resize-handle {
+  height: 4px;
+  cursor: ns-resize;
+  background: transparent;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.preview-resize-handle:hover {
+  background: var(--accent-brand);
+  opacity: 0.3;
+}
+
+.preview-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+}
+
+.preview-error {
+  padding: 12px;
+  font-size: 12px;
+  color: var(--text-500);
+  text-align: center;
+}
+
+.preview-html-wrap {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+.preview-html {
+  flex: 1;
+  border: none;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+}
+
+.preview-code {
+  flex: 1;
+  overflow: auto;
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  font-family: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace;
+  color: var(--text-200);
+  background: var(--bg-000);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.preview-code code {
+  font-family: inherit;
+}
+
+.preview-image-wrap {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: var(--bg-100);
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.preview-binary {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-500);
+  font-size: 12px;
+}
+
+.preview-markdown {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-200);
+}
+
+.preview-markdown :deep(h1) {
+  font-size: 1.4em;
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+  color: var(--text-100);
+  border-bottom: 1px solid var(--border-100);
+  padding-bottom: 0.2em;
+}
+
+.preview-markdown :deep(h2) {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin: 0.5em 0 0.2em;
+  color: var(--text-100);
+}
+
+.preview-markdown :deep(h3) {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 0.4em 0 0.2em;
+  color: var(--text-100);
+}
+
+.preview-markdown :deep(p) {
+  margin: 0.4em 0;
+}
+
+.preview-markdown :deep(pre) {
+  background: var(--bg-200);
+  border-radius: 6px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  font-size: 12px;
+  margin: 0.5em 0;
+}
+
+.preview-markdown :deep(code) {
+  font-family: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: var(--bg-200);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.preview-markdown :deep(pre code) {
+  background: none;
+  padding: 0;
+}
+
+.preview-markdown :deep(ul), .preview-markdown :deep(ol) {
+  padding-left: 1.5em;
+  margin: 0.3em 0;
+}
+
+.preview-markdown :deep(li) {
+  margin: 0.15em 0;
+}
+
+.preview-markdown :deep(blockquote) {
+  border-left: 3px solid var(--accent-brand);
+  padding-left: 12px;
+  margin: 0.5em 0;
+  color: var(--text-400);
+}
+
+.preview-markdown :deep(a) {
+  color: var(--accent-brand);
+  text-decoration: none;
+}
+
+.preview-markdown :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.preview-markdown :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+  font-size: 12px;
+}
+
+.preview-markdown :deep(th), .preview-markdown :deep(td) {
+  border: 1px solid var(--border-200);
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.preview-markdown :deep(th) {
+  background: var(--bg-100);
+  font-weight: 600;
+}
+
+.preview-markdown :deep(img) {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.preview-markdown :deep(hr) {
+  border: none;
+  border-top: 1px solid var(--border-200);
+  margin: 0.8em 0;
 }
 </style>

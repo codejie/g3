@@ -21,7 +21,7 @@
         @keydown.meta.enter="handleSubmit"
         class="input-textarea"
         placeholder="输入消息... (Ctrl+Enter 发送)"
-        rows="4"
+        rows="2"
       ></textarea>
 
       <!-- Bottom Controls -->
@@ -70,7 +70,7 @@ const emit = defineEmits<{
   (e: 'submit'): void;
 }>();
 
-const currentMode = ref('build');
+const currentMode = ref(import.meta.env.VITE_INIT_AGENT || 'build');
 
 const quickActions = [
   { id: 'writing', label: '写作', prompt: '帮我写一篇关于...' },
@@ -91,7 +91,6 @@ const handleSubmit = () => {
 <style scoped>
 .chat-input-wrapper {
   width: 100%;
-  max-width: 768px;
   margin: 0 auto;
 }
 
@@ -143,7 +142,7 @@ const handleSubmit = () => {
   color: var(--text-100);
   font-size: 14px;
   line-height: 1.6;
-  min-height: 100px;
+  min-height: 52px;
   outline: none;
 }
 
