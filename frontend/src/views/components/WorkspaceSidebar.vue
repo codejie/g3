@@ -1,6 +1,12 @@
 <template>
-  <div class="workspace-sidebar" :style="{ width: collapsed ? '40px' : '300px' }">
-    <!-- Toggle Button (Left edge when expanded) -->
+<div class="workspace-sidebar" :style="{ width: collapsed ? '40px' : sidebarWidth + 'px' }">
+<!-- Resize Handle (Left edge when expanded) -->
+<div
+  v-if="!collapsed"
+  class="resize-handle"
+@mousedown="startSidebarResize"
+></div>
+<!-- Toggle Button (Left edge when expanded) -->
     <button
       v-if="!collapsed"
       @click="$emit('toggle')"
@@ -169,6 +175,38 @@ const emit = defineEmits<{
 const userStore = useUserStore();
 const fileTree = ref<TreeNode[]>([]);
 const loading = ref(false);
+const sidebarWidth = ref(300);
+let sidebarResizing = false;
+let sidebarResizeStartX = 0;
+let sidebarResizeStartWidth = 0;
+
+const MIN_WIDTH = 300;
+
+const startSidebarResize = (e: MouseEvent) => {
+  e.preventDefault();
+  sidebarResizing = true;
+  sidebarResizeStartX = e.clientX;
+  sidebarResizeStartWidth = sidebarWidth.value;
+  document.addEventListener('mousemove', onSidebarResizeMove);
+  document.addEventListener('mouseup', onSidebarResizeUp);
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+};
+
+const onSidebarResizeMove = (e: MouseEvent) => {
+  if (!sidebarResizing) return;
+  const maxWidth = Math.floor(window.innerWidth / 2);
+  const delta = sidebarResizeStartX - e.clientX;
+  sidebarWidth.value = Math.max(MIN_WIDTH, Math.min(maxWidth, sidebarResizeStartWidth + delta));
+};
+
+const onSidebarResizeUp = () => {
+  sidebarResizing = false;
+  document.removeEventListener('mousemove', onSidebarResizeMove);
+  document.removeEventListener('mouseup', onSidebarResizeUp);
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+};
 const pathStack = ref<string[]>(['/']);
 const currentFullPath = computed(() => pathStack.value[pathStack.value.length - 1]);
 
@@ -363,6 +401,8 @@ onUnmounted(() => {
   document.removeEventListener('click', onDocumentClick);
   document.removeEventListener('mousemove', onResizeMove);
   document.removeEventListener('mouseup', onResizeUp);
+  document.removeEventListener('mousemove', onSidebarResizeMove);
+  document.removeEventListener('mouseup', onSidebarResizeUp);
 });
 
 watch(() => props.projectId, (newId) => {
@@ -384,8 +424,22 @@ watch(() => props.projectId, (newId) => {
   background: var(--bg-000);
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease-in-out;
   overflow: hidden;
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  left: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 50;
+}
+
+.resize-handle:hover {
+  background: var(--accent-brand);
+  opacity: 0.15;
 }
 
 .toggle-btn {
@@ -467,7 +521,6 @@ watch(() => props.projectId, (newId) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 300px;
   min-height: 0;
   animation: fadeIn 0.3s ease;
 }
