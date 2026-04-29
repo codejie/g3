@@ -5,10 +5,8 @@
       ref="sidebarRef"
       :collapsed="chatStore.isSidebarCollapsed"
       :currentProjectId="currentProjectId"
-      @toggle="chatStore.toggleSidebar"
       @selectProject="handleSelectProject"
       @deselectProject="handleDeselectProject"
-      @openSettings="showSettings = true"
     />
 
     <!-- Main Content Area -->
@@ -18,9 +16,9 @@
         <div class="header-left">
           <div v-if="chatStore.isSidebarCollapsed" class="brand-logo">
             <div class="logo-icon">
-              <span>G3</span>
-            </div>
-            <span class="brand-text">G3</span>
+<span>AG</span>
+      </div>
+      <span class="brand-text">AppGenius</span>
           </div>
         <ModelSelector
           :isServerActive="eventStore.isServerActive"
@@ -41,7 +39,7 @@
       <div class="welcome-icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
       </div>
-      <h2 class="welcome-title">欢迎使用 G3</h2>
+      <h2 class="welcome-title">欢迎使用 AppGenius</h2>
       <p class="welcome-desc">请创建或选择一个项目开始对话</p>
     </div>
 
@@ -118,21 +116,24 @@
 
     <!-- Input Area (flow, not absolute) -->
     <div class="floating-input">
-      <ChatInput
-        v-model="message"
-        :loading="chatStore.sending"
-        @submit="sendMessage"
-      />
+    <ChatInput
+      v-model="message"
+      :loading="chatStore.sending"
+      :disabled="isWaitingForResponse"
+      @submit="sendMessage"
+      @agent-mode-change="handleAgentModeChange"
+    />
       </div>
     </div>
   </main>
 
   <!-- Right Workspace Sidebar -->
-<WorkspaceSidebar
-  :collapsed="chatStore.isRightSidebarCollapsed"
-  :projectId="currentProjectId"
-  @toggle="chatStore.toggleRightSidebar"
-/>
+    <WorkspaceSidebar
+      ref="workspaceRef"
+      :collapsed="chatStore.isRightSidebarCollapsed"
+      :projectId="currentProjectId"
+      @toggle="chatStore.toggleRightSidebar"
+    />
   </div>
 </template>
 
@@ -152,6 +153,7 @@ import type { Project } from '../apis/extension/types/project';
 import { projectApi, setConfig as setExtConfig, setAuthToken } from '../apis/extension/api';
 import { useModelStore } from '../store/modelStore';
 import { useUserStore } from '../store/userStore';
+// import { fireMessageSubmit } from '../hooks/messageInteraction';
 
 const DEFAULT_PROVIDER_ID = 'nvidia';
 const DEFAULT_MODEL_ID = 'minimaxai/minimax-m2.5';
@@ -165,11 +167,12 @@ const userStore = useUserStore();
 const message = ref('');
 const scrollContainer = ref<HTMLElement | null>(null);
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
-const showSettings = ref(false);
+const workspaceRef = ref<InstanceType<typeof WorkspaceSidebar> | null>(null);
 const isWaitingForResponse = ref(false);
 const currentProjectId = ref<string | null>(null);
 const currentProject = ref<Project | null>(null);
 const currentDirectory = ref<string | null>(null);
+const agentMode = ref(import.meta.env.VITE_AGENT_BUILD || 'build-extended');
 
 let unsubscribeSSE: (() => void) | null = null;
 
@@ -228,6 +231,12 @@ watch(() => messageStore.messages, () => {
   }
   scrollToBottom();
 }, { deep: true });
+
+watch(() => messageStore.isStreaming, (newVal, oldVal) => {
+  if (oldVal === true && newVal === false && currentProjectId.value) {
+    workspaceRef.value?.refreshFiles();
+  }
+});
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -288,6 +297,10 @@ const getOpenCodeURL = (): string => {
 const handleModelSelect = (providerId: string, modelId: string) => {
 };
 
+const handleAgentModeChange = (mode: string) => {
+  agentMode.value = mode;
+};
+
 const sendMessage = async () => {
   if (!message.value.trim() || chatStore.sending) return;
   if (!currentProject.value?.session_id) return;
@@ -295,20 +308,28 @@ const sendMessage = async () => {
   const userMessage = message.value;
   message.value = '';
 
+  const sessionId = currentProject.value.session_id;
+  console.log('[Home] sendMessage — sessionId:', sessionId, 'msg:', userMessage.slice(0, 50));
+
   messageStore.addUserMessage(userMessage);
 
   isWaitingForResponse.value = true;
 
+  // await fireMessageSubmit({
+  //   sessionId,
+  //   userMessageText: userMessage,
+  //   directory: currentDirectory.value || undefined,
+  // });
+
   chatStore.sending = true;
   try {
-    const sessionId = currentProject.value.session_id;
-
     const baseURL = getOpenCodeURL();
     setConfig({ baseURL });
+    console.log('[Home] calling promptAsync — sessionId:', sessionId, 'baseURL:', baseURL);
 
-    await sessionApi.promptAsync(sessionId, {
-      agent: import.meta.env.VITE_AGENT_BUILD || 'build-extended',
-      parts: [{ type: 'text', text: userMessage }],
+      await sessionApi.promptAsync(sessionId, {
+        agent: agentMode.value,
+        parts: [{ type: 'text', text: userMessage }],
       model: {
         providerID: modelStore.selectedProvider?.name || DEFAULT_PROVIDER_ID,
         modelID: modelStore.selectedModel?.name || DEFAULT_MODEL_ID

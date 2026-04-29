@@ -37,13 +37,13 @@ export const useModelStore = defineStore('model', () => {
   const selectModel = (providerId: string, modelId: string) => {
     selectedProviderId.value = providerId
     selectedModelId.value = modelId
-    localStorage.setItem('g3_selected_provider', providerId)
-    localStorage.setItem('g3_selected_model', modelId)
+    localStorage.setItem('appgenius_selected_provider', providerId)
+    localStorage.setItem('appgenius_selected_model', modelId)
   }
 
   const restoreSelection = () => {
-    const savedProvider = localStorage.getItem('g3_selected_provider')
-    const savedModel = localStorage.getItem('g3_selected_model')
+    const savedProvider = localStorage.getItem('appgenius_selected_provider')
+    const savedModel = localStorage.getItem('appgenius_selected_model')
     if (savedProvider) selectedProviderId.value = savedProvider
     if (savedModel) selectedModelId.value = savedModel
   }

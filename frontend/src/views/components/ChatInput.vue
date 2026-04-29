@@ -14,15 +14,16 @@
 
     <!-- Input Area -->
     <div class="input-container">
-      <textarea
-        :value="modelValue"
-        @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
-        @keydown.ctrl.enter="handleSubmit"
-        @keydown.meta.enter="handleSubmit"
-        class="input-textarea"
-        placeholder="输入消息... (Ctrl+Enter 发送)"
-        rows="2"
-      ></textarea>
+    <textarea
+      :value="modelValue"
+      @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
+      @keydown.ctrl.enter="handleSubmit"
+      @keydown.meta.enter="handleSubmit"
+      class="input-textarea"
+      placeholder="输入消息... (Ctrl+Enter 发送)"
+      rows="2"
+      :disabled="disabled"
+    ></textarea>
 
       <!-- Bottom Controls -->
       <div class="input-controls">
@@ -34,16 +35,34 @@
           </div>
         </div>
 
-        <div class="right-controls">
-          <!-- Mode Selector -->
-          <div class="mode-selector">
+      <div class="right-controls">
+        <!-- Mode Dropdown -->
+        <div class="mode-dropdown" :class="{ open: modeDropdownOpen }">
+          <button
+            class="mode-trigger"
+            @click="modeDropdownOpen = !modeDropdownOpen"
+            :disabled="disabled"
+          >
             <span class="mode-label">{{ currentMode }}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div v-if="modeDropdownOpen" class="mode-options">
+            <button
+              v-for="option in agentModes"
+              :key="option.id"
+              class="mode-option"
+              :class="{ active: currentMode === option.id }"
+              @click="selectMode(option.id)"
+            >
+              <span class="mode-option-label">{{ option.label }}</span>
+            </button>
           </div>
+        </div>
 
-          <!-- Send Button -->
+        <!-- Send Button -->
           <button
             @click="handleSubmit"
-            :disabled="loading || !modelValue.trim()"
+            :disabled="loading || disabled || !modelValue.trim()"
             class="send-btn"
           >
             <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
@@ -56,11 +75,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 interface Props {
   modelValue: string;
   loading?: boolean;
+  disabled?: boolean;
 }
 
 defineProps<Props>();
@@ -68,9 +88,36 @@ defineProps<Props>();
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void;
   (e: 'submit'): void;
+  (e: 'agentModeChange', mode: string): void;
 }>();
 
-const currentMode = ref(import.meta.env.VITE_INIT_AGENT || 'build');
+const agentModes = [
+  { id: 'build', label: 'BUILD', agent: import.meta.env.VITE_AGENT_BUILD || 'build-extended' },
+  { id: 'plan', label: 'PLAN', agent: import.meta.env.VITE_AGENT_PLAN || 'plan-extended' }
+];
+
+const initMode = import.meta.env.VITE_INIT_AGENT_MODE || 'build';
+const currentMode = ref(initMode);
+const modeDropdownOpen = ref(false);
+
+const selectMode = (modeId: string) => {
+  const mode = agentModes.find(m => m.id === modeId);
+  if (mode) {
+    currentMode.value = mode.id;
+    emit('agentModeChange', mode.agent);
+  }
+  modeDropdownOpen.value = false;
+};
+
+const handleClickOutside = (e: MouseEvent) => {
+  const target = e.target as HTMLElement;
+  if (!target.closest('.mode-dropdown')) {
+    modeDropdownOpen.value = false;
+  }
+};
+
+onMounted(() => document.addEventListener('click', handleClickOutside));
+onUnmounted(() => document.removeEventListener('click', handleClickOutside));
 
 const quickActions = [
   { id: 'writing', label: '写作', prompt: '帮我写一篇关于...' },
@@ -150,6 +197,11 @@ const handleSubmit = () => {
   color: var(--text-400);
 }
 
+.input-textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .input-controls {
   position: absolute;
   bottom: 12px;
@@ -186,19 +238,30 @@ const handleSubmit = () => {
   background: var(--bg-200);
 }
 
-.mode-selector {
+.mode-dropdown {
+  position: relative;
+}
+
+.mode-trigger {
   display: flex;
   align-items: center;
+  gap: 4px;
   padding: 4px 8px;
   border-radius: 8px;
   background: var(--bg-100);
   border: 1px solid var(--border-100);
   cursor: pointer;
   transition: background 0.2s;
+  color: var(--text-200);
 }
 
-.mode-selector:hover {
+.mode-trigger:hover:not(:disabled) {
   background: var(--bg-200);
+}
+
+.mode-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .mode-label {
@@ -208,6 +271,47 @@ const handleSubmit = () => {
   text-transform: uppercase;
   min-width: 40px;
   text-align: center;
+}
+
+.mode-options {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
+  background: var(--bg-000);
+  border: 1px solid var(--border-200);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 100;
+  min-width: 100px;
+}
+
+.mode-option {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+  color: var(--text-200);
+}
+
+.mode-option:hover {
+  background: var(--bg-100);
+}
+
+.mode-option.active {
+  background: var(--bg-200);
+  color: var(--accent-brand);
+}
+
+.mode-option-label {
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 .send-btn {

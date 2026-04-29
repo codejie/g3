@@ -5,9 +5,9 @@
       <div class="header-left">
         <div class="brand-logo">
           <div class="logo-icon">
-            <span>G3</span>
-          </div>
-          <span class="brand-text">G3</span>
+<span>AG</span>
+      </div>
+      <span class="brand-text">AppGenius</span>
         </div>
       </div>
     </header>

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
-const STORAGE_KEY = 'g3_current_project_id';
+const STORAGE_KEY = 'appgenius_current_project_id';
 
 export const useChatStore = defineStore('chat', () => {
   const sending = ref(false);

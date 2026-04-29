@@ -12,15 +12,58 @@ export interface ActivateContext {
 
 type ActivateHook = (ctx: ActivateContext) => Promise<void>;
 
-const hooks: ActivateHook[] = [];
+const activateHooks: ActivateHook[] = [];
 
 export function registerActivateHook(hook: ActivateHook) {
-  hooks.push(hook);
+  activateHooks.push(hook);
 }
 
 export async function onProjectActivate(ctx: ActivateContext): Promise<void> {
-  for (const hook of hooks) {
+  for (const hook of activateHooks) {
     await hook(ctx);
+  }
+}
+
+export interface MessageInteractionContext {
+  sessionId: string;
+  messageId?: string;
+  userMessageText?: string;
+  directory?: string;
+}
+
+type MessageInteractionHook = (ctx: MessageInteractionContext) => Promise<void>;
+
+const onSubmitHooks: MessageInteractionHook[] = [];
+const onReplyStartHooks: MessageInteractionHook[] = [];
+const onReplyEndHooks: MessageInteractionHook[] = [];
+
+export function registerOnSubmitHook(hook: MessageInteractionHook) {
+  onSubmitHooks.push(hook);
+}
+
+export function registerOnReplyStartHook(hook: MessageInteractionHook) {
+  onReplyStartHooks.push(hook);
+}
+
+export function registerOnReplyEndHook(hook: MessageInteractionHook) {
+  onReplyEndHooks.push(hook);
+}
+
+export async function fireOnSubmit(ctx: MessageInteractionContext): Promise<void> {
+  for (const hook of onSubmitHooks) {
+    try { await hook(ctx); } catch (err) { console.error('[Hook] onSubmit error:', err); }
+  }
+}
+
+export async function fireOnReplyStart(ctx: MessageInteractionContext): Promise<void> {
+  for (const hook of onReplyStartHooks) {
+    try { await hook(ctx); } catch (err) { console.error('[Hook] onReplyStart error:', err); }
+  }
+}
+
+export async function fireOnReplyEnd(ctx: MessageInteractionContext): Promise<void> {
+  for (const hook of onReplyEndHooks) {
+    try { await hook(ctx); } catch (err) { console.error('[Hook] onReplyEnd error:', err); }
   }
 }
 
@@ -40,14 +83,17 @@ function getCurrentTimeString(): string {
   return `--- ${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss} ---`;
 }
 
-function buildSystemPrompt(ctx: ActivateContext): string {
+// 以下是会话信息、项目信息和用户信息，请加载到系统提示中，以供后续操作和回复参考使用。
+//，并**忽略**本次消息中其他的消息，仅以"${ctx.project.name}项目加载完成~"作为回复内容，**不要使用**其他任何信息回复
+// ---
+
+function buildSystemPrompt(ctx: ActivateContext): string { 
   return `
 Session Id: ${ctx.sessionId}
 User Id: ${ctx.userId}
 Project Name: ${ctx.project.name}
 Project Type: ${ctx.project.type}
 ${ctx.project.description ? `Description: ${ctx.project.description}` : ''}
-
 Project directory: ${ctx.workspacePath}`;
 }
 
@@ -57,12 +103,7 @@ export async function setSystemPromptViaConfig(ctx: ActivateContext): Promise<vo
   const system = buildSystemPrompt(ctx);
 
   try {
-    console.log(`[ProjectHook] Setting system prompt via configApi — directory: ${ctx.directory}`);
-    console.log(`[ProjectHook] System prompt content:\n${system}`);
-
     await configApi.update({ systemPrompt: system }, ctx.directory);
-
-    console.log(`[ProjectHook] System prompt configured via configApi — directory: ${ctx.directory}`);
   } catch (error: any) {
     console.error(`[ProjectHook] System prompt configApi failed — directory: ${ctx.directory}:`, error.message);
   }
@@ -71,25 +112,23 @@ export async function setSystemPromptViaConfig(ctx: ActivateContext): Promise<vo
 export async function setSystemPromptViaMessage(ctx: ActivateContext): Promise<void> {
   ensureOpenCodeConfig();
 
-  const system = buildSystemPrompt(ctx);
+  // const system = buildSystemPrompt(ctx);
 
   if (!ctx.sessionId) {
-    console.warn(`[ProjectHook] Cannot set system prompt via message — no sessionId`);
     return;
   }
 
   try {
-    console.log(`[ProjectHook] Setting system prompt via session message — session: ${ctx.sessionId}, directory: ${ctx.directory}`);
-    console.log(`[ProjectHook] System prompt content:\n${system}`);
-
     await sessionApi.prompt(ctx.sessionId, {
-      system,
-      agent: process.env.VITE_AGENT_BUILD || 'build-extended',
+      // system,
+      agent: 'build-extended',
+      model: {
+        providerID: 'nvidia',
+        modelID: 'google/gemma-4-31b-it'
+      },
       parts: [{ type: 'text', text: `<div style="text-align:center;color:#666">${getCurrentTimeString()}</div>` }],
       noReply: true,
     }, ctx.directory);
-
-    console.log(`[ProjectHook] System prompt sent via session message — session: ${ctx.sessionId}`);
   } catch (error: any) {
     console.error(`[ProjectHook] System prompt via session message failed — session: ${ctx.sessionId}:`, error.message);
   }

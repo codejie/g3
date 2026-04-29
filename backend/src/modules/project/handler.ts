@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import projectModel from './model';
+import projectModel, { ProjectRow } from './model';
 import type {
   CreateProjectRequest,
   GetProjectDetailRequest,
@@ -12,6 +12,7 @@ import opencodeApi from '../../apis/opencode/api/request';
 const { sessionApi, setConfig } = opencodeApi;
 import { ensureWorkspace } from '../file/model';
 import { resolve } from 'path';
+import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { onProjectActivate } from './hooks';
 
 const WORKSPACE_ROOT = process.env.VITE_WORKSPACE_ROOT || resolve(process.cwd(), 'data/workspace');
@@ -29,6 +30,22 @@ export function getProjectDirectory(userId: string, projectId: string): string {
 
 export function getProjectWorkspacePath(userId: string, projectId: string): string {
   return resolve(WORKSPACE_ROOT, userId, projectId);
+}
+
+function writeProjectInfo(project: ProjectRow): void {
+  const workspacePath = getProjectWorkspacePath(project.user_id, project.id);
+  if (!existsSync(workspacePath)) {
+    mkdirSync(workspacePath, { recursive: true });
+  }
+  const info = {
+    id: project.id,
+    name: project.name,
+    type: project.type,
+    description: project.description || '',
+    path: `${WORKSPACE_ROOT}/${project.user_id}/${project.id}/`,
+  };
+  const filePath = resolve(workspacePath, '.PROJECT.md');
+  writeFileSync(filePath, JSON.stringify(info, null, 2), 'utf-8');
 }
 
 function ensureOpenCodeConfig(): void {
@@ -91,6 +108,7 @@ export async function createProjectHandler(request: FastifyRequest, reply: Fasti
   });
 
   await ensureWorkspace(userId, project.id);
+  writeProjectInfo(project);
 
   return reply.send({
     code: RESPONSE_CODES.SUCCESS,
@@ -210,6 +228,11 @@ export async function updateProjectHandler(request: FastifyRequest, reply: Fasti
   }
 
   projectModel.update({ id, name, type, description });
+
+  const updated = projectModel.findById(id);
+  if (updated) {
+    writeProjectInfo(updated);
+  }
 
   return reply.send({
     code: RESPONSE_CODES.SUCCESS,

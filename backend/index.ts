@@ -58,7 +58,7 @@ fastify.register(fileRoutes);
 console.log('File routes loaded');
 
 fastify.get('/', async () => {
-  return { status: 'ok', service: 'G3 Backend' };
+  return { status: 'ok', service: 'AppGenius Backend' };
 });
 
   const start = async () => {

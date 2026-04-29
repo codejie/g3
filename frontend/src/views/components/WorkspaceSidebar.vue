@@ -414,6 +414,8 @@ watch(() => props.projectId, (newId) => {
   }
   closePreview();
 }, { immediate: true });
+
+defineExpose({ refreshFiles });
 </script>
 
 <style scoped>

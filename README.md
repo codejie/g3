@@ -1,6 +1,6 @@
-# G3 Project
+# AppGenius Project
 
-G3工程是一个基于OpenCode服务的工程，实现所需的自定义扩展功能，工程自身也将由OpenCode服务支持和实现。
+AppGenius工程是一个基于OpenCode服务的工程，实现所需的自定义扩展功能，工程自身也将由OpenCode服务支持和实现。
 
 ## 快速开始
 

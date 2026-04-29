@@ -3,14 +3,17 @@ import { ref } from 'vue';
 import type { Message, MessagePart } from '../types';
 import { sessionApi, setConfig } from '../apis/opencode/api';
 import { useChatStore } from './chatStore';
+// import { fireReplyStart } from '../hooks/messageInteraction';
 
 export const useMessageStore = defineStore('message', () => {
   const messages = ref<Message[]>([]);
   const isStreaming = ref(false);
   const loading = ref(false);
+  const currentAssistantMessageId = ref<string | undefined>(undefined);
 
   const clearMessages = () => {
     messages.value = [];
+    currentAssistantMessageId.value = undefined;
   };
 
   const loadMessages = async (sessionId: string, directory?: string) => {
@@ -88,10 +91,12 @@ export const useMessageStore = defineStore('message', () => {
 
   const handlePartDelta = (payload: any) => {
     const { messageID, partID, field, delta } = payload;
+    console.log('[MessageStore] handlePartDelta — messageID:', messageID, 'partID:', partID, 'field:', field, 'delta:', delta?.slice(0, 50));
 
     let messageIndex = messages.value.findIndex(m => m.info?.id === messageID);
 
     if (messageIndex === -1) {
+      console.log('[MessageStore] new assistant message created — messageID:', messageID);
       const newMessage: Message = {
         info: {
           id: messageID,
@@ -102,6 +107,11 @@ export const useMessageStore = defineStore('message', () => {
       };
       messages.value.push(newMessage);
       messageIndex = messages.value.length - 1;
+
+      isStreaming.value = true;
+      currentAssistantMessageId.value = messageID;
+
+      // fireReplyStart({ sessionId: '', messageId: messageID });
     }
 
     const message = messages.value[messageIndex];
@@ -128,17 +138,27 @@ export const useMessageStore = defineStore('message', () => {
       part.text += (delta || '');
       message.parts = [...message.parts];
       messages.value[messageIndex] = { ...message };
+      console.log('[MessageStore] part updated — msgId:', messageID, 'partId:', partID, 'textLen:', part.text.length);
+    } else {
+      console.log('[MessageStore] part type skipped:', part.type);
     }
   };
 
-return {
-  messages,
-  isStreaming,
-  loading,
-  clearMessages,
-  loadMessages,
-  updatePartType,
-  addUserMessage,
-  handlePartDelta,
-};
+  const markReplyEnded = () => {
+    isStreaming.value = false;
+    currentAssistantMessageId.value = undefined;
+  };
+
+  return {
+    messages,
+    isStreaming,
+    loading,
+    currentAssistantMessageId,
+    clearMessages,
+    loadMessages,
+    updatePartType,
+    addUserMessage,
+    handlePartDelta,
+    markReplyEnded,
+  };
 });

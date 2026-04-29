@@ -1,4 +1,4 @@
-# G3 Project 开发记录
+# AppGenius Project 开发记录
 
 ## 2026-04-16 工程框架创建
 
@@ -118,7 +118,7 @@
   - `eventApi`: 事件订阅
   - `logApi`: 日志写入
 
-#### 2. G3扩展API类型定义（apis/extension/）
+#### 2. AppGenius扩展API类型定义（apis/extension/）
 - **types/common.ts**: 公共类型定义
   - PageInfo: 分页信息（page, size, total）
   - SortInfo: 排序信息（field, order）
@@ -172,11 +172,11 @@
 #### API请求实现
 - 选择原生 fetch API 而非 axios
 - 原因：OpenCode API已完整实现，fetch足够使用
-- axios保留用于G3扩展API调用
+- axios保留用于AppGenius扩展API调用
 
 #### 类型定义策略
 - OpenCode API: 基于OpenAPI规范生成，保持一致性
-- G3扩展API: 手动定义，更灵活地适配业务需求
+- AppGenius扩展API: 手动定义，更灵活地适配业务需求
 
 ### 遇到的问题
 
@@ -564,7 +564,7 @@
 - 集成 @fastify/cors 跨域支持
 - 数据库初始化时导入 schema.js
 - 注册User模块路由
-- 健康检查接口返回 `{ status: 'ok', service: 'G3 Backend' }`
+- 健康检查接口返回 `{ status: 'ok', service: 'AppGenius Backend' }`
 
 #### 6. 扩展API类型定义完善（apis/extension/types/）
 - **user.ts**: 重构为完整类型定义
@@ -725,7 +725,7 @@
 
 #### 3. chatStore.ts精简
 - saveCurrentProjectId/loadCurrentProjectId持久化到localStorage
-- g3_current_project_id键
+- appgenius_current_project_id键
 
 #### 4. messageStore.ts更新
 - loadMessages(sessionId, directory?) 从OpenCode加载历史消息

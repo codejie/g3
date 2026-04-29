@@ -2,16 +2,15 @@
 <aside
   class="sidebar"
   :style="{
-    width: collapsed ? '0px' : '260px',
-    opacity: collapsed ? 0 : 1
+    width: collapsed ? '0px' : '260px'
   }"
 >
   <!-- Header -->
   <div class="sidebar-header">
     <div class="logo-icon">
-      <span>G3</span>
+      <span>AG</span>
     </div>
-    <span class="sidebar-title">G3</span>
+    <span class="sidebar-title">AppGenius</span>
   </div>
 
   <!-- Actions -->
@@ -50,11 +49,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
               <span>详情</span>
             </div>
-            <div class="menu-item" @click="handleRename(project)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              <span>改名</span>
-            </div>
-            <div class="menu-item" @click="handleResetSession(project)">
+      <div class="menu-item" @click="handleResetSession(project)">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               <span>重置会话</span>
             </div>
@@ -70,10 +65,10 @@
 
   <!-- Footer -->
   <div class="sidebar-footer">
-    <button class="settings-btn" @click="$emit('openSettings')">
+    <!-- <button class="settings-btn" @click="$emit('openSettings')">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span>设置</span>
-    </button>
+    </button> -->
     <button class="profile-btn" @click="profileVisible = true">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span>个人中心</span>
@@ -107,42 +102,6 @@
     </template>
   </el-dialog>
 
-  <!-- Rename Project Dialog -->
-  <el-dialog v-model="showRenameDialog" title="改名" width="400px" :close-on-click-modal="false">
-    <el-form label-position="top">
-      <el-form-item label="项目名称">
-        <el-input v-model="renameValue" placeholder="输入新名称" />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="showRenameDialog = false">取消</el-button>
-      <el-button type="primary" :loading="renaming" @click="handleConfirmRename">确定</el-button>
-    </template>
-  </el-dialog>
-
-  <!-- Project Detail Dialog -->
-  <el-dialog v-model="showDetailDialog" title="项目详情" width="400px">
-    <div v-if="detailProject" class="detail-content">
-      <div class="detail-row"><span class="detail-label">ID</span><span class="detail-value">{{ detailProject.id }}</span></div>
-      <div class="detail-row"><span class="detail-label">名称</span><span class="detail-value">{{ detailProject.name }}</span></div>
-      <div class="detail-row"><span class="detail-label">类型</span><span class="detail-value">{{ detailProject.type }}</span></div>
-      <div class="detail-row"><span class="detail-label">状态</span><span class="detail-value">{{ detailProject.status }}</span></div>
-      <div class="detail-row"><span class="detail-label">Session</span><span class="detail-value">{{ detailProject.session_id }}</span></div>
-      <div v-if="detailProject.description" class="detail-row"><span class="detail-label">描述</span><span class="detail-value">{{ detailProject.description }}</span></div>
-      <div class="detail-row"><span class="detail-label">创建时间</span><span class="detail-value">{{ formatDate(detailProject.created) }}</span></div>
-      <div class="detail-row"><span class="detail-label">更新时间</span><span class="detail-value">{{ formatDate(detailProject.updated) }}</span></div>
-    </div>
-  </el-dialog>
-
-  <!-- Toggle Button -->
-  <button
-    @click="$emit('toggle')"
-    class="toggle-btn"
-    :style="{ left: collapsed ? '0px' : '260px' }"
-  >
-    <svg v-if="!collapsed" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-    <svg v-else xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-  </button>
 </aside>
 </template>
 
@@ -152,8 +111,8 @@ import { projectApi, setConfig, setAuthToken } from '../../apis/extension/api'
 import { useUserStore } from '../../store/userStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Project } from '../../apis/extension/types/project'
-import type { GetProjectDetailResult } from '../../apis/extension/types/project'
 import ProfileDialog from './ProfileDialog.vue'
+import ProjectDetailDialog from './ProjectDetailDialog.vue'
 
 interface Props {
   collapsed: boolean;
@@ -165,10 +124,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: 'toggle'): void;
   (e: 'selectProject', project: Project, directory: string): void;
   (e: 'deselectProject'): void;
-  (e: 'openSettings'): void;
 }>();
 
 const userStore = useUserStore()
@@ -179,11 +136,6 @@ const openMenuId = ref<string | null>(null)
 const showCreateDialog = ref(false)
 const creating = ref(false)
 const newProject = ref({ name: '', type: 'app', description: '' })
-
-const showRenameDialog = ref(false)
-const renaming = ref(false)
-const renameValue = ref('')
-const renameProject = ref<Project | null>(null)
 
 const showDetailDialog = ref(false)
 const detailProject = ref<Project | null>(null)
@@ -268,33 +220,27 @@ const handleProjectClick = async (project: Project) => {
 }
 
 const handleDetail = async (project: Project) => {
-  const detail = await fetchProjectDetail(project.id)
-  detailProject.value = detail ? detail.item : project
+  try {
+    initApi()
+    const response = await projectApi.detail({ id: project.id })
+    if (response.code === 0 && response.data?.item) {
+      detailProject.value = response.data.item
+    } else {
+      detailProject.value = project
+    }
+  } catch (error) {
+    console.error('[Sidebar] Failed to get project detail:', error)
+    detailProject.value = project
+  }
   showDetailDialog.value = true
   openMenuId.value = null
 }
 
-const handleRename = (project: Project) => {
-  renameProject.value = project
-  renameValue.value = project.name
-  showRenameDialog.value = true
-  openMenuId.value = null
-}
-
-const handleConfirmRename = async () => {
-  if (!renameProject.value || !renameValue.value.trim()) return
-  renaming.value = true
-  try {
-    initApi()
-    await projectApi.update({ id: renameProject.value.id, name: renameValue.value.trim() })
-    ElMessage.success('改名成功')
-    showRenameDialog.value = false
-    await fetchProjects()
-  } catch (error) {
-    console.error('[Sidebar] Failed to rename project:', error)
-    ElMessage.error('改名失败')
-  } finally {
-    renaming.value = false
+const handleProjectUpdated = async (project: Project) => {
+  await fetchProjects()
+  if (props.currentProjectId === project.id) {
+    const detail = await fetchProjectDetail(project.id)
+    if (detail) emit('selectProject', detail.item, detail.directory)
   }
 }
 
@@ -343,12 +289,6 @@ const handleDelete = async (project: Project) => {
   }
 }
 
-const formatDate = (timestamp?: number): string => {
-  if (!timestamp) return ''
-  const date = new Date(timestamp * 1000)
-  return date.toLocaleString()
-}
-
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
   if (!target.closest('.project-menu-wrapper')) {
@@ -376,8 +316,7 @@ defineExpose({ fetchProjects })
   background: var(--bg-000);
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease-in-out;
-  z-index: 30;
+  transition: width 0.3s ease-in-out;
   overflow: hidden;
 }
 
@@ -637,57 +576,4 @@ defineExpose({ fetchProjects })
   color: var(--accent-brand);
 }
 
-.toggle-btn {
-  position: absolute;
-  top: 80px;
-  z-index: 40;
-  width: 16px;
-  height: 64px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-000);
-  border: 1px solid var(--border-100);
-  border-radius: 0 8px 8px 0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.toggle-btn:hover {
-  background: var(--bg-100);
-}
-
-.toggle-btn svg {
-  color: var(--text-400);
-  transition: color 0.2s;
-}
-
-.toggle-btn:hover svg {
-  color: var(--accent-brand);
-}
-
-.detail-content {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.detail-row {
-  display: flex;
-  gap: 12px;
-  font-size: 13px;
-}
-
-.detail-label {
-  width: 70px;
-  flex-shrink: 0;
-  color: var(--text-400);
-}
-
-.detail-value {
-  color: var(--text-200);
-  word-break: break-all;
-}
 </style>

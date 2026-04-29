@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { subscribeToEvents, getConnectionInfo } from '../api/events';
+import { subscribeToEvents, getConnectionInfo } from './sse';
 import type { ConnectionInfo } from '../types';
 import { useMessageStore } from './messageStore';
+// import { fireReplyEnd } from '../hooks/messageInteraction';
 
 export const useEventStore = defineStore('event', () => {
   const messageStore = useMessageStore();
@@ -21,8 +22,10 @@ export const useEventStore = defineStore('event', () => {
   };
 
   const init = () => {
+    // console.log('[EventStore] init — setting up SSE callbacks');
     const callbacks = {
       onPartDelta: (payload: any) => {
+        // console.log('[EventStore] onPartDelta received');
         messageStore.handlePartDelta(payload);
       },
       onPartUpdated: (payload: any) => {
@@ -30,15 +33,24 @@ export const useEventStore = defineStore('event', () => {
         const mID = part.messageID || part.messageId || part.message_id;
         const pID = part.id || part.partID || part.id;
         const pType = part.type || part.field || part.type;
+        // console.log('[EventStore] onPartUpdated — mID:', mID, 'pID:', pID, 'pType:', pType);
 
         if (mID && pID && pType) {
           messageStore.updatePartType(mID, pID, pType);
         }
       },
       onSessionStatus: (payload: any) => {
+        // console.log('[EventStore] onSessionStatus:', JSON.stringify(payload).slice(0, 200));
         if (payload.status && typeof payload.status === 'object' && payload.status.type === 'idle') {
-          // Session completed
+          // console.log('[EventStore] session idle via sessionStatus');
+          // fireReplyEnd({ sessionId: payload.sessionID, messageId: messageStore.currentAssistantMessageId });
+          messageStore.markReplyEnded();
         }
+      },
+      onSessionIdle: (payload: { sessionID: string }) => {
+        // console.log('[EventStore] onSessionIdle — sessionId:', payload.sessionID);
+        // fireReplyEnd({ sessionId: payload.sessionID, messageId: messageStore.currentAssistantMessageId });
+        messageStore.markReplyEnded();
       },
       onServerHeartbeat: () => {
         lastHeartbeatTime.value = Date.now();

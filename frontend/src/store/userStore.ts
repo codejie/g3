@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-const SECRET_KEY = 'G3_User_Auth_2024'
+const SECRET_KEY = 'AppGenius_User_Auth_2026'
 
 function encode(data: string): string {
   const encoded = btoa(unescape(encodeURIComponent(data)))
@@ -39,32 +39,32 @@ export const useUserStore = defineStore('user', () => {
 function saveUser(info: UserInfo) {
     const data = JSON.stringify(info)
     const encrypted = encode(data)
-    localStorage.setItem('g3_user', encrypted)
+    localStorage.setItem('appgenius_user', encrypted)
     userInfo.value = info
   }
 
   function loadUser(): boolean {
-    const encrypted = localStorage.getItem('g3_user')
+    const encrypted = localStorage.getItem('appgenius_user')
     if (!encrypted) return false
 
     const decrypted = decode(encrypted)
     if (!decrypted) {
-      localStorage.removeItem('g3_user')
-      return false
-    }
+localStorage.removeItem('appgenius_user')
+    return false
+  }
 
-    try {
-      const info = JSON.parse(decrypted) as UserInfo
-      userInfo.value = info
-      return true
-    } catch {
-      localStorage.removeItem('g3_user')
+  try {
+    const info = JSON.parse(decrypted) as UserInfo
+    userInfo.value = info
+    return true
+  } catch {
+    localStorage.removeItem('appgenius_user')
       return false
     }
   }
 
   function logout() {
-    localStorage.removeItem('g3_user')
+    localStorage.removeItem('appgenius_user')
     localStorage.removeItem('token')
     userInfo.value = null
   }

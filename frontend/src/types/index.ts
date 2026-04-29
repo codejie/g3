@@ -28,6 +28,7 @@ export interface EventCallbacks {
   onPartUpdated?: (payload: any) => void;
   onPartDelta?: (payload: any) => void;
   onSessionStatus?: (payload: any) => void;
+  onSessionIdle?: (payload: { sessionID: string }) => void;
   onServerHeartbeat?: (payload: any) => void;
   onError?: (error: Error) => void;
   onReconnected?: (source: string) => void;

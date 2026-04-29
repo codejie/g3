@@ -6,7 +6,7 @@ import { createHash } from 'crypto'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-const dbPath = resolve(process.cwd(), process.env.VITE_DATABASE_FILE || './data/g3.db')
+const dbPath = resolve(process.cwd(), process.env.VITE_DATABASE_FILE || './data/appgenius.db')
 const dbDir = resolve(dbPath, '..')
 mkdirSync(dbDir, { recursive: true })
 
@@ -135,17 +135,20 @@ const testerProfileId = deterministicUUID('profile', 'tester')
 
 const ollamaProviderId = deterministicUUID('provider', 'ollama')
 const nvidiaProviderId = deterministicUUID('provider', 'nvidia')
+const deepseekProviderId = deterministicUUID('provider', 'deepseek')
 const qwen3ModelId = deterministicUUID('model', 'ollama:qwen3-7b')
 const gemma4ModelId = deterministicUUID('model', 'ollama:gemma4-26b')
 const glm5ModelId = deterministicUUID('model', 'nvidia:glm5')
 const gemma4NvidiaModelId = deterministicUUID('model', 'nvidia:gemma4')
+const deepseekChatModelId = deterministicUUID('model', 'eepseek-chat')
+const deepseekV4FlashModelId = deterministicUUID('model', 'deepseek-v4-flash')
 
 db.exec(`
 -- 插入管理员用户
 INSERT OR IGNORE INTO profiles (id, user_id, name, email, nickname, avatar, gender, description, department, remark, created_at, updated_at)
 VALUES
-('${adminProfileId}', '${adminUserId}', 'Administrator', 'admin@g3.local', 'Admin', NULL, 'other', 'System Administrator', 'IT', 'Super admin user', ${currentTime}, ${currentTime}),
-('${testerProfileId}', '${testerUserId}', 'Test User', 'tester@g3.local', 'Tester', NULL, 'male', 'Test account for testing', 'QA', 'Test user', ${currentTime}, ${currentTime});
+('${adminProfileId}', '${adminUserId}', 'Administrator', 'admin@appgenius.local', 'Admin', NULL, 'other', 'System Administrator', 'IT', 'Super admin user', ${currentTime}, ${currentTime}),
+('${testerProfileId}', '${testerUserId}', 'Test User', 'tester@appgenius.local', 'Tester', NULL, 'male', 'Test account for testing', 'QA', 'Test user', ${currentTime}, ${currentTime});
 
 INSERT OR IGNORE INTO users (id, username, password, role, disabled, profile_id, created_at, updated_at)
 VALUES
@@ -154,15 +157,18 @@ VALUES
 
 INSERT OR IGNORE INTO providers (id, name, description, created_at)
 VALUES
-('${ollamaProviderId}', 'ollama', 'ollama local server', ${currentTime}),
-('${nvidiaProviderId}', 'nvidia', 'Nvidia-builder', ${currentTime});
+  ('${ollamaProviderId}', 'ollama', 'ollama local server', ${currentTime}),
+  ('${nvidiaProviderId}', 'nvidia', 'Nvidia-builder', ${currentTime}),
+  ('${deepseekProviderId}', 'deepseek', 'DeepSeek', ${currentTime});
 
 INSERT OR IGNORE INTO models (id, provider_id, name, description, context_size, created_at)
 VALUES
 ('${qwen3ModelId}', '${ollamaProviderId}', 'qwen3-7b', 'qwen3', 32768, ${currentTime}),
 ('${gemma4ModelId}', '${ollamaProviderId}', 'gemma4-26b', 'good', 131072, ${currentTime}),
-('${glm5ModelId}', '${nvidiaProviderId}', 'z-ai/glm5', 'free', 128000, ${currentTime}),
-('${gemma4NvidiaModelId}', '${nvidiaProviderId}', 'google/gemma-4-31b-it', 'free', 32768, ${currentTime});
+  ('${glm5ModelId}', '${nvidiaProviderId}', 'z-ai/glm5', 'free', 128000, ${currentTime}),
+  ('${gemma4NvidiaModelId}', '${nvidiaProviderId}', 'google/gemma-4-31b-it', 'free', 32768, ${currentTime}),
+  ('${deepseekChatModelId}', '${deepseekProviderId}', 'deepseek-chat', 'DeepSeek Chat', 65536, ${currentTime}),
+  ('${deepseekV4FlashModelId}', '${deepseekProviderId}', 'deepseek-v4-flash', 'DeepSeek V4 Flash', 65536, ${currentTime});
 `)
 
 export default db
