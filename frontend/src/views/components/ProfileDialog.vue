@@ -11,13 +11,9 @@
         <div class="profile-name">{{ profile.name || '-' }}</div>
         <div class="profile-role">{{ userStore.userRole }}</div>
       </div>
-      <div class="profile-fields">
-        <div class="profile-field">
-          <span class="field-label">ID</span>
-          <span class="field-value">{{ profile.user_id || '-' }}</span>
-        </div>
-        <div class="profile-field">
-          <span class="field-label">邮箱</span>
+<div class="profile-fields">
+                <div class="profile-field">
+                  <span class="field-label">邮箱</span>
           <span class="field-value">{{ profile.email || '-' }}</span>
         </div>
         <div class="profile-field">

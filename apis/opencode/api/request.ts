@@ -34,6 +34,7 @@ import type {
   WorktreeRemoveInput,
   WorktreeResetInput,
   FileDiff,
+  Skill,
 } from '../types'
 
 export interface RequestConfig {
@@ -287,6 +288,10 @@ export const formatterApi = {
   status: (directory?: string) => get<FormatterStatus[]>('/formatter', { directory }),
 }
 
+export const skillApi = {
+  list: (directory?: string) => get<Skill[]>('/skill', { directory }),
+}
+
 export const eventApi = {
   subscribe: (directory?: string) => get<GlobalEvent>('/event', { directory }),
 }
@@ -328,4 +333,5 @@ export default {
   formatterApi,
   eventApi,
   logApi,
+  skillApi,
 }

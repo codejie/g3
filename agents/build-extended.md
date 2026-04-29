@@ -1,0 +1,1 @@
+/Users/jie/.config/opencode/agent/build-extended.md

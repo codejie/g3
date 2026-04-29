@@ -1,0 +1,1 @@
+/Users/jie/.config/opencode/agent/plan-extended.md

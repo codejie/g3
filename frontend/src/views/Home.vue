@@ -68,16 +68,11 @@
               :key="idx"
             >
                   <!-- Thinking/Reasoning Part -->
-                  <div
+                  <ThinkingBlock
                     v-if="part.type === 'reasoning' && part.text.trim()"
-                    class="thinking-block"
-                  >
-                    <div class="thinking-header">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
-                      <span>Thinking...</span>
-                    </div>
-                    <div class="thinking-content">{{ part.text.trim() }}</div>
-                  </div>
+                    :text="part.text.trim()"
+                    :streaming="messageStore.isStreaming"
+                  />
 
                   <!-- Text Part (Markdown) -->
                   <div
@@ -149,6 +144,7 @@ import Sidebar from './components/Sidebar.vue';
 import WorkspaceSidebar from './components/WorkspaceSidebar.vue';
 import ChatInput from './components/ChatInput.vue';
 import ModelSelector from './components/ModelSelector.vue';
+import ThinkingBlock from './components/ThinkingBlock.vue';
 import type { Project } from '../apis/extension/types/project';
 import { projectApi, setConfig as setExtConfig, setAuthToken } from '../apis/extension/api';
 import { useModelStore } from '../store/modelStore';
@@ -534,32 +530,6 @@ const sendMessage = async () => {
   flex: 1;
   overflow: hidden;
   min-width: 0;
-}
-
-.thinking-block {
-  margin: 8px 0;
-  padding: 12px;
-  background: var(--bg-200);
-  border-left: 2px solid var(--accent-brand);
-  border-radius: 0 8px 8px 0;
-  font-size: 12px;
-  font-style: italic;
-  color: var(--text-400);
-}
-
-.thinking-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  opacity: 0.5;
-  font-size: 12px;
-}
-
-.thinking-content {
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace;
 }
 
 .agent-block {

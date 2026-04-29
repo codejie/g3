@@ -27,15 +27,37 @@
 
       <!-- Bottom Controls -->
       <div class="input-controls">
-        <div class="left-controls">
-          <!-- Skills Placeholder -->
-          <div class="skills-btn">
+      <div class="left-controls">
+      </div>
+
+      <div class="right-controls">
+        <!-- Skills Dropdown -->
+        <div class="skills-dropdown" :class="{ open: skillsDropdownOpen }">
+          <button
+            class="skills-trigger"
+            @click="toggleSkillsDropdown"
+            :disabled="disabled"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
             <span>Skills</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div v-if="skillsDropdownOpen" class="skills-options">
+            <div v-if="skillsLoading" class="skills-loading">加载中...</div>
+            <div v-else-if="skillsList.length === 0" class="skills-empty">暂无 Skills</div>
+            <button
+              v-else
+              v-for="skill in skillsList"
+              :key="skill.name"
+              class="skill-item"
+              @click="handleSkillSelect(skill)"
+            >
+              <span class="skill-name">{{ skill.name }}</span>
+              <span class="skill-desc">{{ truncateDesc(skill.description) }}</span>
+            </button>
           </div>
         </div>
 
-      <div class="right-controls">
         <!-- Mode Dropdown -->
         <div class="mode-dropdown" :class="{ open: modeDropdownOpen }">
           <button
@@ -65,7 +87,7 @@
             :disabled="loading || disabled || !modelValue.trim()"
             class="send-btn"
           >
-            <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
           </button>
         </div>
@@ -76,20 +98,61 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { skillApi, setConfig } from '../../apis/opencode/api';
+import type { Skill } from '../../apis/opencode/types';
 
 interface Props {
   modelValue: string;
   loading?: boolean;
   disabled?: boolean;
+  directory?: string;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void;
   (e: 'submit'): void;
   (e: 'agentModeChange', mode: string): void;
+  (e: 'skillSelect', skill: Skill): void;
 }>();
+
+const skillsList = ref<Skill[]>([]);
+const skillsLoading = ref(false);
+const skillsDropdownOpen = ref(false);
+
+const fetchSkills = async () => {
+  skillsLoading.value = true;
+  try {
+    const baseURL = import.meta.env.VITE_OPENCODE_URL || 'http://127.0.0.1:10090';
+    setConfig({ baseURL });
+    skillsList.value = await skillApi.list();
+  } catch (error) {
+    console.error('[ChatInput] Failed to fetch skills:', error);
+    skillsList.value = [];
+  } finally {
+    skillsLoading.value = false;
+  }
+};
+
+const toggleSkillsDropdown = () => {
+  skillsDropdownOpen.value = !skillsDropdownOpen.value;
+  if (skillsDropdownOpen.value && skillsList.value.length === 0 && !skillsLoading.value) {
+    fetchSkills();
+  }
+};
+
+const truncateDesc = (desc: string): string => {
+  if (!desc) return '';
+  if (desc.length <= 64) return desc;
+  return desc.slice(0, 64) + '...';
+};
+
+const handleSkillSelect = (skill: Skill) => {
+  const current = props.modelValue || '';
+  emit('update:modelValue', current + `/${skill.name} `);
+  skillsDropdownOpen.value = false;
+};
 
 const agentModes = [
   { id: 'build', label: 'BUILD', agent: import.meta.env.VITE_AGENT_BUILD || 'build-extended' },
@@ -113,6 +176,9 @@ const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
   if (!target.closest('.mode-dropdown')) {
     modeDropdownOpen.value = false;
+  }
+  if (!target.closest('.skills-dropdown')) {
+    skillsDropdownOpen.value = false;
   }
 };
 
@@ -218,7 +284,11 @@ const handleSubmit = () => {
   gap: 8px;
 }
 
-.skills-btn {
+.skills-dropdown {
+  position: relative;
+}
+
+.skills-trigger {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -234,8 +304,82 @@ const handleSubmit = () => {
   text-transform: uppercase;
 }
 
-.skills-btn:hover {
+.skills-trigger:hover:not(:disabled) {
   background: var(--bg-200);
+}
+
+.skills-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.skills-options {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
+  background: var(--bg-000);
+  border: 1px solid var(--border-200);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 100;
+  min-width: 240px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.skills-options::-webkit-scrollbar {
+  width: 4px;
+}
+
+.skills-options::-webkit-scrollbar-thumb {
+  background-color: var(--border-200);
+  border-radius: 10px;
+}
+
+.skills-loading,
+.skills-empty {
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--text-400);
+  text-align: center;
+}
+
+.skill-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.skill-item:hover {
+  background: var(--bg-100);
+}
+
+.skill-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-100);
+}
+
+.skill-desc {
+  font-size: 11px;
+  color: var(--text-400);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
 }
 
 .mode-dropdown {
@@ -245,14 +389,17 @@ const handleSubmit = () => {
 .mode-trigger {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   padding: 4px 8px;
   border-radius: 8px;
   background: var(--bg-100);
   border: 1px solid var(--border-100);
   cursor: pointer;
   transition: background 0.2s;
-  color: var(--text-200);
+  color: var(--text-300);
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 .mode-trigger:hover:not(:disabled) {
@@ -265,9 +412,9 @@ const handleSubmit = () => {
 }
 
 .mode-label {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: bold;
-  color: var(--text-200);
+  color: var(--text-300);
   text-transform: uppercase;
   min-width: 40px;
   text-align: center;

@@ -240,11 +240,13 @@ const fetchFiles = async (path?: string): Promise<TreeNode[]> => {
     });
     if (response.code === 0 && response.data) {
       const items = (response.data as any).items || [];
-      return items.map((item: FileNode) => ({
-        ...item,
-        children: item.type === 'directory' ? [] : undefined,
-        loading: false,
-      }));
+      return items
+        .filter((item: FileNode) => !item.name.startsWith('.'))
+        .map((item: FileNode) => ({
+          ...item,
+          children: item.type === 'directory' ? [] : undefined,
+          loading: false,
+        }));
     }
     return [];
   } catch (error) {

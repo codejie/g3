@@ -451,3 +451,9 @@ export interface WorktreeRemoveInput {
 export interface WorktreeResetInput {
   branch: string
 }
+
+export interface Skill {
+  name: string
+  description: string
+  location: string
+}
