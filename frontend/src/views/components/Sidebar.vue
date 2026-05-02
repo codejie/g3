@@ -10,24 +10,24 @@
     <div class="logo-icon">
       <span>AG</span>
     </div>
-    <span class="sidebar-title">AppGenius</span>
+    <span class="sidebar-title">{{ $t('app.name') }}</span>
   </div>
 
   <!-- Actions -->
   <div class="sidebar-actions">
     <button @click="showCreateDialog = true" class="new-chat-btn">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      <span>新建项目</span>
+      <span>{{ $t('sidebar.newProject') }}</span>
     </button>
   </div>
 
   <!-- Project List -->
   <div class="session-section">
-    <div class="section-title">项目列表</div>
+    <div class="section-title">{{ $t('sidebar.projectList') }}</div>
     <div class="session-list">
-      <div v-if="projectList.length === 0" class="empty-sessions">
-        暂无项目
-      </div>
+    <div v-if="projectList.length === 0" class="empty-sessions">
+      {{ $t('sidebar.noProjects') }}
+    </div>
       <div
         v-for="project in projectList"
         :key="project.id"
@@ -45,18 +45,18 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
           </button>
           <div v-if="openMenuId === project.id" class="project-menu">
-            <div class="menu-item" @click="handleDetail(project)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-              <span>详情</span>
-            </div>
+      <div class="menu-item" @click="handleDetail(project)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>{{ $t('sidebar.detail') }}</span>
+      </div>
       <div class="menu-item" @click="handleResetSession(project)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              <span>重置会话</span>
-            </div>
-            <div class="menu-item danger" @click="handleDelete(project)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              <span>删除</span>
-            </div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <span>{{ $t('sidebar.resetSession') }}</span>
+      </div>
+      <div class="menu-item danger" @click="handleDelete(project)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        <span>{{ $t('sidebar.delete') }}</span>
+      </div>
           </div>
         </div>
       </div>
@@ -65,53 +65,93 @@
 
   <!-- Footer -->
   <div class="sidebar-footer">
-    <!-- <button class="settings-btn" @click="$emit('openSettings')">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      <span>设置</span>
-    </button> -->
-    <button class="profile-btn" @click="profileVisible = true">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <span>个人中心</span>
+    <button class="user-menu-trigger" :class="{ active: showUserMenu }" @click="showUserMenu = !showUserMenu">
+      <div class="user-avatar">{{ userInitial }}</div>
+      <div class="user-meta">
+        <span class="user-name">{{ userStore.userInfo?.username }}</span>
+        <span class="user-role">{{ userStore.userInfo?.role }}</span>
+      </div>
+      <svg class="chevron-icon" :class="{ rotated: showUserMenu }" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </button>
+    <div v-if="showUserMenu" class="user-menu-panel">
+      <div class="user-detail-row">
+        <span class="detail-label">{{ $t('sidebar.userUsername') }}</span>
+        <span class="detail-value">{{ userStore.userInfo?.username }}</span>
+      </div>
+      <div class="user-detail-row">
+        <span class="detail-label">{{ $t('sidebar.userRole') }}</span>
+        <span class="detail-value">{{ userStore.userInfo?.role }}</span>
+      </div>
+          <button class="menu-action-btn" @click="toggleLanguage">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span>{{ $t('sidebar.language') }} {{ currentLanguage }}</span>
+          </button>
+          <button class="menu-action-btn" @click="handleChangePassword">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>{{ $t('sidebar.changePassword') }}</span>
+      </button>
+      <button class="menu-action-btn logout-btn" @click="handleLogout">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>{{ $t('sidebar.logout') }}</span>
+      </button>
+    </div>
   </div>
 
-  <!-- Profile Dialog -->
-  <ProfileDialog v-model="profileVisible" />
-
-  <!-- Create Project Dialog -->
-  <el-dialog v-model="showCreateDialog" title="新建项目" width="400px" :close-on-click-modal="false">
+  <!-- Change Password Dialog -->
+  <el-dialog v-model="showChangePwdDialog" :title="$t('sidebar.changePasswordTitle')" width="380px" :close-on-click-modal="false">
     <el-form label-position="top">
-      <el-form-item label="项目名称">
-        <el-input v-model="newProject.name" placeholder="输入项目名称" />
+      <el-form-item :label="$t('sidebar.newPassword')">
+        <el-input v-model="changePwdForm.newPassword" type="password" show-password :placeholder="$t('sidebar.enterNewPassword')" />
       </el-form-item>
-      <el-form-item label="项目类型">
-        <el-select v-model="newProject.type" placeholder="选择项目类型" style="width: 100%">
-          <el-option label="应用开发" value="app" />
-          <el-option label="网站建设" value="web" />
-          <el-option label="数据分析" value="data" />
-          <el-option label="其他" value="other" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="项目描述">
-        <el-input v-model="newProject.description" type="textarea" :rows="3" placeholder="输入项目描述（可选）" />
+      <el-form-item :label="$t('sidebar.confirmPassword')">
+        <el-input v-model="changePwdForm.confirmPassword" type="password" show-password :placeholder="$t('sidebar.enterConfirmPassword')" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="showCreateDialog = false">取消</el-button>
-      <el-button type="primary" :loading="creating" @click="handleCreateProject">确定</el-button>
+      <el-button @click="showChangePwdDialog = false">{{ $t('sidebar.cancel') }}</el-button>
+      <el-button type="primary" :loading="changingPwd" @click="submitChangePassword">{{ $t('sidebar.confirm') }}</el-button>
     </template>
   </el-dialog>
+
+  <!-- Project Detail Dialog -->
+  <ProjectDetailDialog v-model="showDetailDialog" :project="detailProject" />
+
+  <!-- Create Project Dialog -->
+  <el-dialog v-model="showCreateDialog" :title="$t('sidebar.createProject')" width="400px" :close-on-click-modal="false">
+  <el-form label-position="top">
+    <el-form-item :label="$t('sidebar.projectName')">
+      <el-input v-model="newProject.name" :placeholder="$t('sidebar.enterProjectName')" />
+    </el-form-item>
+    <el-form-item :label="$t('sidebar.projectType')">
+      <el-select v-model="newProject.type" :placeholder="$t('sidebar.selectProjectType')" style="width: 100%">
+        <el-option :label="$t('sidebar.typeApp')" value="app" />
+        <el-option :label="$t('sidebar.typeWeb')" value="web" />
+        <el-option :label="$t('sidebar.typeData')" value="data" />
+        <el-option :label="$t('sidebar.typeOther')" value="other" />
+      </el-select>
+    </el-form-item>
+    <el-form-item :label="$t('sidebar.projectDesc')">
+      <el-input v-model="newProject.description" type="textarea" :rows="3" :placeholder="$t('sidebar.enterProjectDesc')" />
+    </el-form-item>
+  </el-form>
+  <template #footer>
+    <el-button @click="showCreateDialog = false">{{ $t('login.cancel') }}</el-button>
+    <el-button type="primary" :loading="creating" @click="handleCreateProject">{{ $t('sidebar.confirm') }}</el-button>
+  </template>
+</el-dialog>
 
 </aside>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { projectApi, setConfig, setAuthToken } from '../../apis/extension/api'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { projectApi, userApi, setConfig, setAuthToken } from '../../apis/extension/api'
 import { useUserStore } from '../../store/userStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { setLocale, getLocale } from '../../locales'
 import type { Project } from '../../apis/extension/types/project'
-import ProfileDialog from './ProfileDialog.vue'
 import ProjectDetailDialog from './ProjectDetailDialog.vue'
 
 interface Props {
@@ -128,10 +168,31 @@ const emit = defineEmits<{
   (e: 'deselectProject'): void;
 }>();
 
+const { t } = useI18n()
+const router = useRouter()
 const userStore = useUserStore()
-const profileVisible = ref(false)
+const showUserMenu = ref(false)
 const projectList = ref<Project[]>([])
 const openMenuId = ref<string | null>(null)
+
+const showChangePwdDialog = ref(false)
+const changingPwd = ref(false)
+const changePwdForm = ref({ newPassword: '', confirmPassword: '' })
+
+const userInitial = computed(() => {
+  return userStore.userInfo?.username?.charAt(0)?.toUpperCase() || 'U'
+})
+
+const currentLanguage = computed(() => {
+  const locale = getLocale()
+  return locale === 'zh-CN' ? t('sidebar.languageZh') : t('sidebar.languageEn')
+})
+
+const toggleLanguage = () => {
+  const locale = getLocale()
+  const newLocale = locale === 'zh-CN' ? 'en-US' : 'zh-CN'
+  setLocale(newLocale)
+}
 
 const showCreateDialog = ref(false)
 const creating = ref(false)
@@ -179,18 +240,18 @@ const fetchProjectDetail = async (projectId: string): Promise<{ item: Project; d
 
 const handleCreateProject = async () => {
   if (!newProject.value.type) {
-    ElMessage.warning('请选择项目类型')
+    ElMessage.warning(t('sidebar.selectType'))
     return
   }
   creating.value = true
   try {
     initApi()
     const createRes = await projectApi.create({
-      name: newProject.value.name || '未命名项目',
+      name: newProject.value.name || t('sidebar.unnamedProject'),
       type: newProject.value.type,
       description: newProject.value.description || undefined,
     })
-    ElMessage.success('项目创建成功')
+    ElMessage.success(t('sidebar.createSuccess'))
     showCreateDialog.value = false
     newProject.value = { name: '', type: 'app', description: '' }
     await fetchProjects()
@@ -200,7 +261,7 @@ const handleCreateProject = async () => {
     }
   } catch (error) {
     console.error('[Sidebar] Failed to create project:', error)
-    ElMessage.error('创建项目失败')
+    ElMessage.error(t('sidebar.createFailed'))
   } finally {
     creating.value = false
   }
@@ -236,25 +297,17 @@ const handleDetail = async (project: Project) => {
   openMenuId.value = null
 }
 
-const handleProjectUpdated = async (project: Project) => {
-  await fetchProjects()
-  if (props.currentProjectId === project.id) {
-    const detail = await fetchProjectDetail(project.id)
-    if (detail) emit('selectProject', detail.item, detail.directory)
-  }
-}
-
 const handleResetSession = async (project: Project) => {
   openMenuId.value = null
   try {
-    await ElMessageBox.confirm('确定要重置该项目的会话吗？重置后不可恢复。', '重置会话', { type: 'warning' })
+    await ElMessageBox.confirm(t('sidebar.resetConfirm'), t('sidebar.resetTitle'), { type: 'warning' })
   } catch {
     return
   }
   try {
     initApi()
     const resetRes = await projectApi.resetSession({ id: project.id })
-    ElMessage.success('会话已重置')
+    ElMessage.success(t('sidebar.resetSuccess'))
     await fetchProjects()
     if (resetRes.code === 0 && resetRes.data?.id) {
       const detail = await fetchProjectDetail(resetRes.data.id)
@@ -264,28 +317,80 @@ const handleResetSession = async (project: Project) => {
     }
   } catch (error) {
     console.error('[Sidebar] Failed to reset session:', error)
-    ElMessage.error('重置会话失败')
+    ElMessage.error(t('sidebar.resetFailed'))
   }
 }
 
 const handleDelete = async (project: Project) => {
   openMenuId.value = null
   try {
-    await ElMessageBox.confirm(`确定要删除项目"${project.name}"吗？此操作不可恢复。`, '删除项目', { type: 'warning' })
+    await ElMessageBox.confirm(t('sidebar.deleteConfirm', { name: project.name }), t('sidebar.deleteTitle'), { type: 'warning' })
   } catch {
     return
   }
   try {
     initApi()
     await projectApi.setStatus({ id: project.id, status: 'deleted' })
-    ElMessage.success('项目已删除')
+    ElMessage.success(t('sidebar.deleteSuccess'))
     if (props.currentProjectId === project.id) {
       emit('deselectProject')
     }
     await fetchProjects()
   } catch (error) {
     console.error('[Sidebar] Failed to delete project:', error)
-    ElMessage.error('删除失败')
+    ElMessage.error(t('sidebar.deleteFailed'))
+  }
+}
+
+const handleChangePassword = () => {
+  showUserMenu.value = false
+  changePwdForm.value = { newPassword: '', confirmPassword: '' }
+  showChangePwdDialog.value = true
+}
+
+const submitChangePassword = async () => {
+  if (!changePwdForm.value.newPassword) {
+    ElMessage.warning(t('sidebar.enterNewPassword'))
+    return
+  }
+  if (changePwdForm.value.newPassword !== changePwdForm.value.confirmPassword) {
+    ElMessage.warning(t('sidebar.passwordMismatch'))
+    return
+  }
+  changingPwd.value = true
+  try {
+    initApi()
+    await userApi.changePassword({
+      id: userStore.userInfo?.id || '',
+      new_password: changePwdForm.value.newPassword
+    })
+    ElMessage.success(t('sidebar.passwordSuccess'))
+    showChangePwdDialog.value = false
+  } catch (error) {
+    console.error('[Sidebar] Failed to change password:', error)
+    ElMessage.error(t('sidebar.passwordFailed'))
+  } finally {
+    changingPwd.value = false
+  }
+}
+
+const handleLogout = async () => {
+  showUserMenu.value = false
+  try {
+    await ElMessageBox.confirm(t('sidebar.logoutConfirm'), t('sidebar.logoutTitle'), { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    initApi()
+    await userApi.logout()
+  } catch (error) {
+    console.error('[Sidebar] Logout API failed:', error)
+  } finally {
+    setAuthToken(null)
+    userStore.logout()
+    ElMessage.success(t('sidebar.logoutSuccess'))
+    router.push('/login')
   }
 }
 
@@ -293,6 +398,9 @@ const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
   if (!target.closest('.project-menu-wrapper')) {
     openMenuId.value = null
+  }
+  if (!target.closest('.sidebar-footer')) {
+    showUserMenu.value = false
   }
 }
 
@@ -548,32 +656,144 @@ defineExpose({ fetchProjects })
   gap: 4px;
 }
 
-.profile-btn, .settings-btn {
+.user-menu-trigger {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: transparent;
-  color: var(--text-200);
-  font-size: 14px;
-  border: none;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background 0.2s;
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: inherit;
 }
 
-.profile-btn:hover, .settings-btn:hover {
+.user-menu-trigger:hover {
   background: var(--bg-100);
 }
 
-.profile-btn svg, .settings-btn svg {
+.user-menu-trigger.active {
+  background: var(--bg-100);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-brand);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-100);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role {
+  font-size: 11px;
   color: var(--text-400);
+}
+
+.chevron-icon {
+  color: var(--text-400);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.chevron-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.user-menu-panel {
+  margin-top: 4px;
+  padding: 8px;
+  background: var(--bg-100);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fadeIn 0.15s ease;
+}
+
+.user-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: var(--text-400);
+}
+
+.detail-value {
+  font-size: 12px;
+  color: var(--text-200);
+  font-weight: 500;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-300);
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.menu-action-btn:hover {
+  background: var(--bg-200);
+  color: var(--text-100);
+}
+
+.menu-action-btn svg {
+  flex-shrink: 0;
   transition: color 0.2s;
 }
 
-.profile-btn:hover svg, .settings-btn:hover svg {
-  color: var(--accent-brand);
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+}
+
+.logout-btn:hover svg {
+  color: #ef4444;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 </style>

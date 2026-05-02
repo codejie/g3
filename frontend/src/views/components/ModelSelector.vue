@@ -7,27 +7,27 @@
     </div>
 
     <div v-if="dropdownOpen" class="model-dropdown">
-      <div v-if="modelStore.loading" class="dropdown-loading">加载中...</div>
+      <div v-if="modelStore.loading" class="dropdown-loading">{{ t('modelSelector.loading') }}</div>
       <template v-else>
         <div
           v-for="item in modelStore.items"
           :key="item.provider.id"
           class="provider-group"
         >
-          <div class="provider-label">{{ item.provider.name }}</div>
-          <div
-            v-for="model in item.models"
-            :key="model.id"
-            class="model-option"
-            :class="{ selected: model.id === modelStore.selectedModelId }"
-            @click="handleSelect(item.provider.id, model.id)"
-          >
-            <span class="model-option-name">{{ model.name }}</span>
-            <span v-if="model.context_size" class="model-option-context">{{ formatContextSize(model.context_size) }}</span>
+        <div class="provider-label">{{ getOptionValue(item.provider.options, 'name') || item.provider.provider_id }}</div>
+        <div
+          v-for="model in item.models"
+          :key="model.id"
+          class="model-option"
+          :class="{ selected: model.id === modelStore.selectedModelId }"
+          @click="handleSelect(item.provider.id, model.id)"
+        >
+          <span class="model-option-name">{{ getOptionValue(model.options, 'name') || model.model_id }}</span>
+          <span v-if="getOptionValue(model.options, 'context_size')" class="model-option-context">{{ formatContextSize(Number(getOptionValue(model.options, 'context_size'))) }}</span>
             <svg v-if="model.id === modelStore.selectedModelId" class="check-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
         </div>
-        <div v-if="modelStore.items.length === 0" class="dropdown-empty">暂无可用模型</div>
+        <div v-if="modelStore.items.length === 0" class="dropdown-empty">{{ t('modelSelector.noModels') }}</div>
       </template>
     </div>
   </div>
@@ -35,8 +35,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useModelStore } from '../../store/modelStore'
-import { useEventStore } from '../../store/eventStore'
 
 defineProps<{
   isServerActive?: boolean
@@ -46,8 +46,8 @@ const emit = defineEmits<{
   (e: 'select', providerId: string, modelId: string): void
 }>()
 
+const { t } = useI18n()
 const modelStore = useModelStore()
-const eventStore = useEventStore()
 
 const selectorRef = ref<HTMLElement | null>(null)
 const dropdownOpen = ref(false)
@@ -71,7 +71,11 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
-const formatContextSize = (size: number): string => {
+  const getOptionValue = (options: { key: string; value: string }[], key: string): string => {
+    return options.find(o => o.key === key)?.value || ''
+  }
+
+  const formatContextSize = (size: number): string => {
   if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(0)}M`
   if (size >= 1024) return `${(size / 1024).toFixed(0)}K`
   return `${size}`

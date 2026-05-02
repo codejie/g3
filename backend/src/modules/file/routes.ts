@@ -5,8 +5,12 @@ import {
   downloadFileHandler,
   uploadFileHandler,
   readFileHandler,
+  readOpencodeConfigHandler,
+  saveOpencodeConfigHandler,
+  downloadOpencodeConfigHandler,
+  uploadOpencodeConfigHandler,
 } from './handler';
-import { authenticateUser } from '../../middleware/auth';
+import { authenticateUser, authenticateAdmin } from '../../middleware/auth';
 
 const getFilesSchema = {
   description: 'List files in project',
@@ -100,12 +104,84 @@ const readFileSchema = {
   },
 };
 
+const readOpencodeConfigSchema = {
+  description: 'Read OpenCode config file content',
+  tags: ['File'],
+  body: {
+    type: 'object',
+    required: ['name'],
+    properties: {
+      requestId: { type: 'string' },
+      name: { type: 'string', description: 'Config file name (opencode.json or config.json)' },
+    },
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        code: { type: 'number' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            content: { type: 'string' },
+            exists: { type: 'boolean' },
+          },
+        },
+      },
+    },
+  },
+};
+
+const saveOpencodeConfigSchema = {
+  description: 'Save OpenCode config file content',
+  tags: ['File'],
+  body: {
+    type: 'object',
+    required: ['name', 'content'],
+    properties: {
+      requestId: { type: 'string' },
+      name: { type: 'string', description: 'Config file name (opencode.json or config.json)' },
+      content: { type: 'string', description: 'JSON content of the config file' },
+    },
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        code: { type: 'number' },
+        message: { type: 'string' },
+      },
+    },
+  },
+};
+
+const downloadOpencodeConfigSchema = {
+  description: 'Download OpenCode config file',
+  tags: ['File'],
+  body: {
+    type: 'object',
+    required: ['name'],
+    properties: {
+      requestId: { type: 'string' },
+      name: { type: 'string', description: 'Config file name (opencode.json or config.json)' },
+    },
+  },
+};
+
 export async function fileRoutes(fastify: FastifyInstance) {
   fastify.post('/api/file/list', { preHandler: [authenticateUser], schema: getFilesSchema }, getFilesHandler);
   fastify.post('/api/file/delete', { preHandler: [authenticateUser], schema: deleteFileSchema }, deleteFileHandler);
   fastify.post('/api/file/download', { preHandler: [authenticateUser], schema: downloadFileSchema }, downloadFileHandler);
   fastify.post('/api/file/upload', { preHandler: [authenticateUser] }, uploadFileHandler);
   fastify.post('/api/file/read', { preHandler: [authenticateUser], schema: readFileSchema }, readFileHandler);
+
+  // OpenCode Config — admin only
+  fastify.post('/api/file/opencode-config/read', { preHandler: [authenticateAdmin], schema: readOpencodeConfigSchema }, readOpencodeConfigHandler);
+  fastify.post('/api/file/opencode-config/save', { preHandler: [authenticateAdmin], schema: saveOpencodeConfigSchema }, saveOpencodeConfigHandler);
+  fastify.post('/api/file/opencode-config/download', { preHandler: [authenticateAdmin], schema: downloadOpencodeConfigSchema }, downloadOpencodeConfigHandler);
+  fastify.post('/api/file/opencode-config/upload', { preHandler: [authenticateAdmin] }, uploadOpencodeConfigHandler);
 }
 
 export default fileRoutes;

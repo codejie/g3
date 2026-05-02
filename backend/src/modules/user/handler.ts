@@ -12,6 +12,8 @@ const RESPONSE_CODES = {
   UNAUTHORIZED: -3,
   NOT_FOUND: -5,
   CONFLICT: -6,
+  FORBIDDEN: -4,
+  SERVER_ERROR: -7,
 };
 
 function hashPassword(password: string): string {
@@ -124,13 +126,15 @@ export async function registerHandler(request: FastifyRequest, reply: FastifyRep
     username,
     password: hashPassword(password),
     role,
-    profileId
+    profileId: undefined
   });
 
   const insertProfile = db.prepare(
     'INSERT INTO profiles (id, user_id, name, gender, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
   );
   insertProfile.run(profileId, user.id, username, 'other', currentTime, currentTime);
+
+  db.prepare('UPDATE users SET profile_id = ? WHERE id = ?').run(profileId, user.id);
 
   return reply.status(201).send({
     code: RESPONSE_CODES.SUCCESS,
@@ -202,4 +206,112 @@ export async function profileHandler(request: FastifyRequest, reply: FastifyRepl
     code: RESPONSE_CODES.SUCCESS,
     data: { profile }
   });
+}
+
+export async function listUsersHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { role } = request.body as { role?: string };
+
+  let users: any[];
+  if (role) {
+    const stmt = db.prepare('SELECT id, username, role, disabled, profile_id, created_at, updated_at FROM users WHERE role = ? ORDER BY created_at DESC');
+    users = stmt.all(role) as any[];
+  } else {
+    const stmt = db.prepare('SELECT id, username, role, disabled, profile_id, created_at, updated_at FROM users ORDER BY created_at DESC');
+    users = stmt.all() as any[];
+  }
+
+  const profileStmt = db.prepare('SELECT * FROM profiles WHERE id = ?');
+  const items = users.map((user: any) => {
+    let profile: Profile | undefined;
+    if (user.profile_id) {
+      const profileRow = profileStmt.get(user.profile_id) as any;
+      if (profileRow) {
+        profile = {
+          id: profileRow.id,
+          user_id: profileRow.user_id,
+          name: profileRow.name,
+          email: profileRow.email || undefined,
+          nickname: profileRow.nickname || undefined,
+          avatar: profileRow.avatar || undefined,
+          gender: profileRow.gender || undefined,
+          description: profileRow.description || undefined,
+          department: profileRow.department || undefined,
+          remark: profileRow.remark || undefined,
+        };
+      }
+    }
+    return {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      disabled: user.disabled,
+      profile_id: user.profile_id,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      profile,
+    };
+  });
+
+  return reply.send({ code: RESPONSE_CODES.SUCCESS, data: { items } });
+}
+
+export async function deleteUserHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { id } = request.body as { id?: string };
+
+  if (!id) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'User ID is required' });
+  }
+
+  const user = userModel.findById(id);
+  if (!user) {
+    return reply.send({ code: RESPONSE_CODES.NOT_FOUND, message: 'User not found' });
+  }
+
+  const profileId = user.profile_id;
+
+  const deleteLogEntries = db.prepare('DELETE FROM log_entries WHERE user_id = ?');
+  deleteLogEntries.run(id);
+
+  const deleteProjects = db.prepare('DELETE FROM projects WHERE user_id = ?');
+  deleteProjects.run(id);
+
+  const deleteTokens = db.prepare('DELETE FROM tokens WHERE user_id = ?');
+  deleteTokens.run(id);
+
+  const deleted = userModel.delete(id);
+  if (!deleted) {
+    return reply.send({ code: RESPONSE_CODES.SERVER_ERROR, message: 'Failed to delete user' });
+  }
+
+  if (profileId) {
+    db.prepare('DELETE FROM profiles WHERE id = ?').run(profileId);
+  }
+
+  console.log(`[User] Deleted: ${user.username} (${id}), profile: ${profileId}`);
+  return reply.send({ code: RESPONSE_CODES.SUCCESS });
+}
+
+export async function changePasswordHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { id, new_password } = request.body as { id?: string; new_password?: string };
+
+  if (!id || !new_password) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'User ID and new password are required' });
+  }
+
+  const user = userModel.findById(id);
+  if (!user) {
+    return reply.send({ code: RESPONSE_CODES.NOT_FOUND, message: 'User not found' });
+  }
+
+  const hashedPassword = hashPassword(new_password);
+  const updated = userModel.updatePassword(id, hashedPassword);
+  if (!updated) {
+    return reply.send({ code: RESPONSE_CODES.SERVER_ERROR, message: 'Failed to update password' });
+  }
+
+  const deleteTokens = db.prepare('DELETE FROM tokens WHERE user_id = ?');
+  deleteTokens.run(id);
+
+  console.log(`[User] Password changed for: ${user.username} (${id})`);
+  return reply.send({ code: RESPONSE_CODES.SUCCESS });
 }

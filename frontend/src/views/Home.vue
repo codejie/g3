@@ -2,7 +2,6 @@
   <div class="home-container" :style="{ paddingTop: 'var(--safe-area-inset-top)' }">
     <!-- Left Sidebar -->
     <Sidebar
-      ref="sidebarRef"
       :collapsed="chatStore.isSidebarCollapsed"
       :currentProjectId="currentProjectId"
       @selectProject="handleSelectProject"
@@ -18,18 +17,19 @@
             <div class="logo-icon">
 <span>AG</span>
       </div>
-      <span class="brand-text">AppGenius</span>
+      <span class="brand-text">{{ $t('app.name') }}</span>
           </div>
         <ModelSelector
           :isServerActive="eventStore.isServerActive"
           @select="handleModelSelect"
         />
         </div>
-        <div class="header-right">
-          <button class="header-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          </button>
+      <div class="header-right">
+        <div class="server-status" :class="{ enabled: eventStore.isServerActive, disabled: !eventStore.isServerActive }">
+          <div class="status-indicator"></div>
+          <span class="status-label">{{ eventStore.isServerActive ? 'Connected' : 'Disconnected' }}</span>
         </div>
+      </div>
       </header>
 
   <!-- Chat Area -->
@@ -39,8 +39,8 @@
       <div class="welcome-icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
       </div>
-      <h2 class="welcome-title">欢迎使用 AppGenius</h2>
-      <p class="welcome-desc">请创建或选择一个项目开始对话</p>
+        <h2 class="welcome-title">{{ $t('home.welcome') }}</h2>
+        <p class="welcome-desc">{{ $t('home.selectProject') }}</p>
     </div>
 
     <!-- Chat Messages -->
@@ -87,7 +87,7 @@
                     class="agent-block"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h.01"/><path d="M17 7h.01"/><path d="M7 17h.01"/><path d="M17 17h.01"/></svg>
-                    <span>Executing: {{ (part as any).name || 'agent' }}</span>
+                    <span>{{ $t('home.executing') }} {{ (part as any).name || 'agent' }}</span>
                   </div>
             </div>
           </div>
@@ -114,7 +114,7 @@
     <ChatInput
       v-model="message"
       :loading="chatStore.sending"
-      :disabled="isWaitingForResponse"
+      :disabled="!currentProjectId || isWaitingForResponse"
       @submit="sendMessage"
       @agent-mode-change="handleAgentModeChange"
     />
@@ -134,6 +134,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { sessionApi, setConfig } from '../apis/opencode/api';
 import { useChatStore } from '../store/chatStore';
 import { useMessageStore } from '../store/messageStore';
@@ -159,10 +160,10 @@ const messageStore = useMessageStore();
 const eventStore = useEventStore();
 const modelStore = useModelStore();
 const userStore = useUserStore();
+useI18n();
 
 const message = ref('');
 const scrollContainer = ref<HTMLElement | null>(null);
-const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
 const workspaceRef = ref<InstanceType<typeof WorkspaceSidebar> | null>(null);
 const isWaitingForResponse = ref(false);
 const currentProjectId = ref<string | null>(null);
@@ -290,7 +291,7 @@ const getOpenCodeURL = (): string => {
   return import.meta.env.VITE_OPENCODE_URL || 'http://127.0.0.1:10090';
 };
 
-const handleModelSelect = (providerId: string, modelId: string) => {
+const handleModelSelect = (_providerId: string, _modelId: string) => {
 };
 
 const handleAgentModeChange = (mode: string) => {
@@ -327,8 +328,8 @@ const sendMessage = async () => {
         agent: agentMode.value,
         parts: [{ type: 'text', text: userMessage }],
       model: {
-        providerID: modelStore.selectedProvider?.name || DEFAULT_PROVIDER_ID,
-        modelID: modelStore.selectedModel?.name || DEFAULT_MODEL_ID
+        providerID: modelStore.selectedProvider?.provider_id || DEFAULT_PROVIDER_ID,
+        modelID: modelStore.selectedModel?.model_id || DEFAULT_MODEL_ID
       }
     }, currentDirectory.value || undefined);
 
@@ -410,18 +411,49 @@ const sendMessage = async () => {
   gap: 8px;
 }
 
-.header-btn {
-  padding: 8px;
-  border-radius: 8px;
-  transition: background 0.2s;
-  background: transparent;
-  border: none;
-  cursor: pointer;
+.server-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  user-select: none;
+  transition: all 0.3s ease;
+}
+
+.server-status.enabled {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-100);
+}
+
+.server-status.disabled {
+  background: rgba(107, 114, 128, 0.1);
   color: var(--text-400);
 }
 
-.header-btn:hover {
-  background: var(--bg-100);
+.status-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.server-status.enabled .status-indicator {
+  background: var(--success-100);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+.server-status.disabled .status-indicator {
+  background: var(--text-400);
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .chat-area {

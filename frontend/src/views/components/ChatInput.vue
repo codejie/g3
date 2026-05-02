@@ -20,7 +20,7 @@
       @keydown.ctrl.enter="handleSubmit"
       @keydown.meta.enter="handleSubmit"
       class="input-textarea"
-      placeholder="输入消息... (Ctrl+Enter 发送)"
+        :placeholder="t('chatInput.placeholder')"
       rows="2"
       :disabled="disabled"
     ></textarea>
@@ -39,12 +39,12 @@
             :disabled="disabled"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            <span>Skills</span>
+            <span>{{ t('chatInput.skills') }}</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div v-if="skillsDropdownOpen" class="skills-options">
-            <div v-if="skillsLoading" class="skills-loading">加载中...</div>
-            <div v-else-if="skillsList.length === 0" class="skills-empty">暂无 Skills</div>
+        <div v-if="skillsLoading" class="skills-loading">{{ t('chatInput.skillsLoading') }}</div>
+        <div v-else-if="skillsList.length === 0" class="skills-empty">{{ t('chatInput.noSkills') }}</div>
             <button
               v-else
               v-for="skill in skillsList"
@@ -97,7 +97,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { skillApi, setConfig } from '../../apis/opencode/api';
 import type { Skill } from '../../apis/opencode/types';
 
@@ -109,6 +110,8 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void;
@@ -185,14 +188,14 @@ const handleClickOutside = (e: MouseEvent) => {
 onMounted(() => document.addEventListener('click', handleClickOutside));
 onUnmounted(() => document.removeEventListener('click', handleClickOutside));
 
-const quickActions = [
-  { id: 'writing', label: '写作', prompt: '帮我写一篇关于...' },
-  { id: 'page', label: '页面', prompt: '创建一个页面...' },
-  { id: 'app', label: '应用', prompt: '帮我开发一个应用...' },
-  { id: 'excel', label: '表格', prompt: '处理Excel文件...' }
-];
+const quickActions = computed(() => [
+  { id: 'writing', label: t('chatInput.quickWriting'), prompt: t('chatInput.quickWriting') + '...' },
+  { id: 'page', label: t('chatInput.quickPage'), prompt: t('chatInput.quickPage') + '...' },
+  { id: 'app', label: t('chatInput.quickApp'), prompt: t('chatInput.quickApp') + '...' },
+  { id: 'excel', label: t('chatInput.quickExcel'), prompt: t('chatInput.quickExcel') + '...' }
+]);
 
-const handleQuickAction = (action: typeof quickActions[0]) => {
+const handleQuickAction = (action: { id: string; label: string; prompt: string }) => {
   emit('update:modelValue', action.prompt);
 };
 

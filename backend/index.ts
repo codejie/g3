@@ -12,7 +12,8 @@ const fastify = Fastify({
 
 await fastify.register(cors, {
   origin: true,
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 });
 
 async function loadEnv() {
@@ -56,6 +57,14 @@ await fastify.register(import('@fastify/multipart'), {
 const { default: fileRoutes } = await import('./src/modules/file/routes.js');
 fastify.register(fileRoutes);
 console.log('File routes loaded');
+
+const { default: skillRoutes } = await import('./src/modules/skill/routes.js');
+fastify.register(skillRoutes);
+console.log('Skill routes loaded');
+
+const { default: systemRoutes } = await import('./src/modules/system/routes.js');
+fastify.register(systemRoutes);
+console.log('System routes loaded');
 
 fastify.get('/', async () => {
   return { status: 'ok', service: 'AppGenius Backend' };

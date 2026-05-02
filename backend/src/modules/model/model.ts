@@ -1,46 +1,39 @@
 import db from '../../utils/db';
 import { v4 as uuidv4 } from 'uuid';
-
-export interface ProviderRow {
-  id: string;
-  name: string;
-  description: string | null;
-  created_at: number;
-}
-
-export interface ModelRow {
-  id: string;
-  provider_id: string;
-  name: string;
-  description: string | null;
-  context_size: number | null;
-  created_at: number;
-}
+import type { ProviderRow, ModelRow, ProviderOptionRow, ModelOptionRow, Options } from '../../apis/extension/types/model';
 
 export interface CreateProviderData {
-  name: string;
-  description?: string;
+  provider_id: string;
+  npm?: string;
+  options: Options[];
 }
 
 export interface CreateModelData {
   provider_id: string;
-  name: string;
-  description?: string;
-  context_size?: number;
+  model_id: string;
+  options: Options[];
 }
 
 export interface ModelModel {
   listProviders(): ProviderRow[];
   findProviderById(id: string): ProviderRow | undefined;
-  findProviderByName(name: string): ProviderRow | undefined;
+  findProviderByProviderId(providerId: string): ProviderRow | undefined;
   createProvider(data: CreateProviderData): ProviderRow;
   deleteProvider(id: string): boolean;
+  getProviderOptions(providerId: string): ProviderOptionRow[];
+  setProviderOptions(providerId: string, options: Options[]): void;
+  updateProviderOptions(providerId: string, options: Options[]): void;
+  updateProviderNpm(providerId: string, npm: string | null): void;
 
   listModels(providerId?: string): ModelRow[];
   findModelById(id: string): ModelRow | undefined;
+  findModelByModelId(providerId: string, modelId: string): ModelRow | undefined;
   createModel(data: CreateModelData): ModelRow;
   deleteModel(id: string): boolean;
   deleteModelsByProvider(providerId: string): number;
+  getModelOptions(modelId: string): ModelOptionRow[];
+  setModelOptions(modelId: string, options: Options[]): void;
+  updateModelOptions(modelId: string, options: Options[]): void;
 }
 
 const modelModel: ModelModel = {
@@ -54,17 +47,22 @@ const modelModel: ModelModel = {
     return stmt.get(id) as ProviderRow | undefined;
   },
 
-  findProviderByName(name: string): ProviderRow | undefined {
-    const stmt = db.prepare('SELECT * FROM providers WHERE name = ?');
-    return stmt.get(name) as ProviderRow | undefined;
+  findProviderByProviderId(providerId: string): ProviderRow | undefined {
+    const stmt = db.prepare('SELECT * FROM providers WHERE provider_id = ?');
+    return stmt.get(providerId) as ProviderRow | undefined;
   },
 
   createProvider(data: CreateProviderData): ProviderRow {
     const id = uuidv4();
+    const now = Math.floor(Date.now() / 1000);
+    const npmValue = data.npm || null;
     const stmt = db.prepare(
-      'INSERT INTO providers (id, name, description) VALUES (?, ?, ?)'
+      'INSERT INTO providers (id, provider_id, npm, disabled, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)'
     );
-    stmt.run(id, data.name, data.description || null);
+    stmt.run(id, data.provider_id, npmValue, now, now);
+
+    this.setProviderOptions(id, data.options);
+
     const provider = this.findProviderById(id);
     if (!provider) {
       throw new Error('Failed to create provider');
@@ -73,9 +71,53 @@ const modelModel: ModelModel = {
   },
 
   deleteProvider(id: string): boolean {
+    const delOpts = db.prepare('DELETE FROM provider_options WHERE provider_id = ?');
+    delOpts.run(id);
     const stmt = db.prepare('DELETE FROM providers WHERE id = ?');
     const result = stmt.run(id);
     return result.changes > 0;
+  },
+
+  getProviderOptions(providerId: string): ProviderOptionRow[] {
+    const stmt = db.prepare('SELECT * FROM provider_options WHERE provider_id = ?');
+    return stmt.all(providerId) as ProviderOptionRow[];
+  },
+
+  setProviderOptions(providerId: string, options: Options[]): void {
+    const insertStmt = db.prepare(
+      'INSERT OR REPLACE INTO provider_options (id, provider_id, key, value) VALUES (?, ?, ?, ?)'
+    );
+    for (const opt of options) {
+      const optId = uuidv4();
+      insertStmt.run(optId, providerId, opt.key, opt.value);
+    }
+  },
+
+  updateProviderOptions(providerId: string, options: Options[]): void {
+    const existing = this.getProviderOptions(providerId);
+    const existingKeys = new Set(existing.map(o => o.key));
+    const newKeys = new Set(options.map(o => o.key));
+
+    const deleteStmt = db.prepare('DELETE FROM provider_options WHERE provider_id = ? AND key = ?');
+    for (const key of existingKeys) {
+      if (!newKeys.has(key)) {
+        deleteStmt.run(providerId, key);
+      }
+    }
+
+    const upsertStmt = db.prepare(
+      'INSERT OR REPLACE INTO provider_options (id, provider_id, key, value) VALUES (?, ?, ?, ?)'
+    );
+    for (const opt of options) {
+      const existingOpt = existing.find(o => o.key === opt.key);
+      const optId = existingOpt ? existingOpt.id : uuidv4();
+      upsertStmt.run(optId, providerId, opt.key, opt.value);
+    }
+  },
+
+  updateProviderNpm(providerId: string, npm: string | null): void {
+    const stmt = db.prepare('UPDATE providers SET npm = ? WHERE id = ?');
+    stmt.run(npm, providerId);
   },
 
   listModels(providerId?: string): ModelRow[] {
@@ -92,12 +134,21 @@ const modelModel: ModelModel = {
     return stmt.get(id) as ModelRow | undefined;
   },
 
+  findModelByModelId(providerId: string, modelId: string): ModelRow | undefined {
+    const stmt = db.prepare('SELECT * FROM models WHERE provider_id = ? AND model_id = ?');
+    return stmt.get(providerId, modelId) as ModelRow | undefined;
+  },
+
   createModel(data: CreateModelData): ModelRow {
     const id = uuidv4();
+    const now = Math.floor(Date.now() / 1000);
     const stmt = db.prepare(
-      'INSERT INTO models (id, provider_id, name, description, context_size) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO models (id, provider_id, model_id, disabled, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)'
     );
-    stmt.run(id, data.provider_id, data.name, data.description || null, data.context_size || null);
+    stmt.run(id, data.provider_id, data.model_id, now, now);
+
+    this.setModelOptions(id, data.options);
+
     const model = this.findModelById(id);
     if (!model) {
       throw new Error('Failed to create model');
@@ -106,15 +157,59 @@ const modelModel: ModelModel = {
   },
 
   deleteModel(id: string): boolean {
+    const delOpts = db.prepare('DELETE FROM model_options WHERE model_id = ?');
+    delOpts.run(id);
     const stmt = db.prepare('DELETE FROM models WHERE id = ?');
     const result = stmt.run(id);
     return result.changes > 0;
   },
 
   deleteModelsByProvider(providerId: string): number {
+    const models = this.listModels(providerId);
+    for (const model of models) {
+      const delOpts = db.prepare('DELETE FROM model_options WHERE model_id = ?');
+      delOpts.run(model.id);
+    }
     const stmt = db.prepare('DELETE FROM models WHERE provider_id = ?');
     const result = stmt.run(providerId);
     return result.changes;
+  },
+
+  getModelOptions(modelId: string): ModelOptionRow[] {
+    const stmt = db.prepare('SELECT * FROM model_options WHERE model_id = ?');
+    return stmt.all(modelId) as ModelOptionRow[];
+  },
+
+  setModelOptions(modelId: string, options: Options[]): void {
+    const insertStmt = db.prepare(
+      'INSERT OR REPLACE INTO model_options (id, model_id, key, value) VALUES (?, ?, ?, ?)'
+    );
+    for (const opt of options) {
+      const optId = uuidv4();
+      insertStmt.run(optId, modelId, opt.key, opt.value);
+    }
+  },
+
+  updateModelOptions(modelId: string, options: Options[]): void {
+    const existing = this.getModelOptions(modelId);
+    const existingKeys = new Set(existing.map(o => o.key));
+    const newKeys = new Set(options.map(o => o.key));
+
+    const deleteStmt = db.prepare('DELETE FROM model_options WHERE model_id = ? AND key = ?');
+    for (const key of existingKeys) {
+      if (!newKeys.has(key)) {
+        deleteStmt.run(modelId, key);
+      }
+    }
+
+    const upsertStmt = db.prepare(
+      'INSERT OR REPLACE INTO model_options (id, model_id, key, value) VALUES (?, ?, ?, ?)'
+    );
+    for (const opt of options) {
+      const existingOpt = existing.find(o => o.key === opt.key);
+      const optId = existingOpt ? existingOpt.id : uuidv4();
+      upsertStmt.run(optId, modelId, opt.key, opt.value);
+    }
   },
 };
 

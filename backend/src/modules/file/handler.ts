@@ -1,9 +1,9 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { listFiles, deleteFile, downloadFile, uploadFile, saveUploadedFile, getFilePath, ensureWorkspace, readFileContent } from './model';
+import { listFiles, deleteFile, downloadFile, uploadFile, getFilePath, ensureWorkspace, readFileContent, readOpencodeConfig, saveOpencodeConfig, downloadOpencodeConfig } from './model';
 import { existsSync, statSync, readdirSync } from 'fs';
 import type { GetFilesRequest, DeleteFileRequest, DownloadFileRequest } from '../../apis/extension/types/file';
-import { unlink, rm } from 'fs/promises';
-import { resolve, dirname, basename } from 'path';
+import { unlink } from 'fs/promises';
+import { resolve, basename } from 'path';
 import { getProjectWorkspacePath } from '../project/handler';
 
 const RESPONSE_CODES = {
@@ -202,5 +202,85 @@ export async function uploadFileHandler(request: FastifyRequest, reply: FastifyR
       code: RESPONSE_CODES.INVALID_REQUEST,
       message: error.message || 'Failed to upload file',
     });
+  }
+}
+
+export async function readOpencodeConfigHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { name } = request.body as { name: string };
+
+  if (!name) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'Config file name is required' });
+  }
+
+  try {
+    const result = readOpencodeConfig(name);
+    return reply.send({ code: RESPONSE_CODES.SUCCESS, data: result });
+  } catch (error: any) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: error.message });
+  }
+}
+
+export async function saveOpencodeConfigHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { name, content } = request.body as { name: string; content: string };
+
+  if (!name || content === undefined) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'Config file name and content are required' });
+  }
+
+  try {
+    saveOpencodeConfig(name, content);
+    return reply.send({ code: RESPONSE_CODES.SUCCESS });
+  } catch (error: any) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: error.message });
+  }
+}
+
+export async function downloadOpencodeConfigHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { name } = request.body as { name: string };
+
+  if (!name) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'Config file name is required' });
+  }
+
+  try {
+    const result = downloadOpencodeConfig(name);
+    const stream = result.stream as NodeJS.ReadableStream;
+    const filename = encodeURIComponent(result.filename);
+
+    reply.raw.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    reply.raw.setHeader('Content-Type', 'application/json');
+
+    const requestOrigin = request.headers.origin || '*';
+    reply.raw.setHeader('Access-Control-Allow-Origin', requestOrigin);
+    reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    reply.hijack();
+    stream.pipe(reply.raw);
+  } catch (error: any) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: error.message });
+  }
+}
+
+export async function uploadOpencodeConfigHandler(request: FastifyRequest, reply: FastifyReply) {
+  const data = await request.file();
+
+  if (!data) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'No file uploaded' });
+  }
+
+  const name = (data.fields['name']?.value as string) || 'opencode.json';
+
+  if (!name.endsWith('.json')) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'Only .json config files are supported' });
+  }
+
+  try {
+    const buffer = await data.toBuffer();
+    const content = buffer.toString('utf-8');
+    saveOpencodeConfig(name, content);
+    console.log(`[File] OpenCode config uploaded: ${name}`);
+    return reply.send({ code: RESPONSE_CODES.SUCCESS });
+  } catch (error: any) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: error.message });
   }
 }

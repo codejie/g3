@@ -1,13 +1,17 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import db from '../../utils/db';
 import modelModel from './model';
+import { syncConfigProvider } from './configSync';
 import type {
   GetModelsRequest,
   AddProviderRequest,
   AddModelRequest,
   DeleteModelRequest,
   DeleteProviderRequest,
-  Provider,
-  Model,
+  UpdateProviderRequest,
+  UpdateModelRequest,
+  Provider as ApiProvider,
+  Model as ApiModel,
 } from '../../apis/extension/types/model';
 
 const RESPONSE_CODES = {
@@ -17,23 +21,21 @@ const RESPONSE_CODES = {
   CONFLICT: -6,
 };
 
-function toProvider(row: any): Provider {
-  return {
-    id: row.id,
-    name: row.name,
-    description: row.description || undefined,
-    created: row.created_at,
-  };
-}
-
-function toModel(row: any): Model {
-  return {
+function toProvider(row: any, options: any[]): ApiProvider {
+  const result: ApiProvider = {
     id: row.id,
     provider_id: row.provider_id,
-    name: row.name,
-    description: row.description || undefined,
-    context_size: row.context_size || undefined,
-    created: row.created_at,
+    options: options.map((o: any) => ({ key: o.key, value: o.value })),
+  };
+  if (row.npm) result.npm = row.npm;
+  return result;
+}
+
+function toModel(row: any, options: any[]): ApiModel {
+  return {
+    id: row.id,
+    model_id: row.model_id,
+    options: options.map((o: any) => ({ key: o.key, value: o.value })),
   };
 }
 
@@ -42,15 +44,16 @@ export async function getModelsHandler(request: FastifyRequest, reply: FastifyRe
 
   const providers = modelModel.listProviders();
   const items = providers.map((providerRow) => {
+    const providerOpts = modelModel.getProviderOptions(providerRow.id);
     const models = modelModel.listModels(providerRow.id);
     return {
-      provider: toProvider(providerRow),
-      models: models.map(toModel),
+      provider: toProvider(providerRow, providerOpts),
+      models: models.map((m) => toModel(m, modelModel.getModelOptions(m.id))),
     };
   });
 
   const filtered = provider_id
-    ? items.filter((item) => item.provider.id === provider_id)
+    ? items.filter((item) => item.provider.provider_id === provider_id || item.provider.id === provider_id)
     : items;
 
   return reply.send({
@@ -60,16 +63,16 @@ export async function getModelsHandler(request: FastifyRequest, reply: FastifyRe
 }
 
 export async function addProviderHandler(request: FastifyRequest, reply: FastifyReply) {
-  const { name, description } = request.body as AddProviderRequest;
+  const { id, npm, options } = request.body as AddProviderRequest;
 
-  if (!name) {
+  if (!id) {
     return reply.send({
       code: RESPONSE_CODES.INVALID_REQUEST,
-      message: 'Provider name is required',
+      message: 'Provider ID is required',
     });
   }
 
-  const existing = modelModel.findProviderByName(name);
+  const existing = modelModel.findProviderByProviderId(id);
   if (existing) {
     return reply.send({
       code: RESPONSE_CODES.CONFLICT,
@@ -77,7 +80,8 @@ export async function addProviderHandler(request: FastifyRequest, reply: Fastify
     });
   }
 
-  const provider = modelModel.createProvider({ name, description });
+  const provider = modelModel.createProvider({ provider_id: id, npm, options: options || [] });
+  syncConfigProvider();
 
   return reply.send({
     code: RESPONSE_CODES.SUCCESS,
@@ -86,16 +90,16 @@ export async function addProviderHandler(request: FastifyRequest, reply: Fastify
 }
 
 export async function addModelHandler(request: FastifyRequest, reply: FastifyReply) {
-  const { provider_id, name, description, context_size } = request.body as AddModelRequest;
+  const { provider_id, id, options } = request.body as AddModelRequest;
 
-  if (!provider_id || !name) {
+  if (!provider_id || !id) {
     return reply.send({
       code: RESPONSE_CODES.INVALID_REQUEST,
-      message: 'Provider ID and model name are required',
+      message: 'Provider ID and model ID are required',
     });
   }
 
-  const provider = modelModel.findProviderById(provider_id);
+  const provider = modelModel.findProviderByProviderId(provider_id) || modelModel.findProviderById(provider_id);
   if (!provider) {
     return reply.send({
       code: RESPONSE_CODES.NOT_FOUND,
@@ -103,11 +107,20 @@ export async function addModelHandler(request: FastifyRequest, reply: FastifyRep
     });
   }
 
-  modelModel.createModel({ provider_id, name, description, context_size });
+  const existing = modelModel.findModelByModelId(provider.id, id);
+  if (existing) {
+    return reply.send({
+      code: RESPONSE_CODES.CONFLICT,
+      message: 'Model already exists under this provider',
+    });
+  }
+
+  const model = modelModel.createModel({ provider_id: provider.id, model_id: id, options: options || [] });
+  syncConfigProvider();
 
   return reply.send({
     code: RESPONSE_CODES.SUCCESS,
-    data: { provider_id },
+    data: { id: model.id, provider_id: provider.id },
   });
 }
 
@@ -130,10 +143,11 @@ export async function deleteModelHandler(request: FastifyRequest, reply: Fastify
   }
 
   modelModel.deleteModel(id);
+  syncConfigProvider();
 
   return reply.send({
     code: RESPONSE_CODES.SUCCESS,
-    data: { provider_id },
+    data: { id, provider_id },
   });
 }
 
@@ -147,7 +161,7 @@ export async function deleteProviderHandler(request: FastifyRequest, reply: Fast
     });
   }
 
-  const provider = modelModel.findProviderById(id);
+  const provider = modelModel.findProviderById(id) || modelModel.findProviderByProviderId(id);
   if (!provider) {
     return reply.send({
       code: RESPONSE_CODES.NOT_FOUND,
@@ -155,10 +169,81 @@ export async function deleteProviderHandler(request: FastifyRequest, reply: Fast
     });
   }
 
-  modelModel.deleteModelsByProvider(id);
-  modelModel.deleteProvider(id);
+  modelModel.deleteModelsByProvider(provider.id);
+  modelModel.deleteProvider(provider.id);
+  syncConfigProvider();
 
   return reply.send({
     code: RESPONSE_CODES.SUCCESS,
+  });
+}
+
+export async function updateProviderHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { id, npm, options } = request.body as UpdateProviderRequest;
+
+  if (!id) {
+    return reply.send({
+      code: RESPONSE_CODES.INVALID_REQUEST,
+      message: 'Provider ID is required',
+    });
+  }
+
+  const provider = modelModel.findProviderById(id) || modelModel.findProviderByProviderId(id);
+  if (!provider) {
+    return reply.send({
+      code: RESPONSE_CODES.NOT_FOUND,
+      message: 'Provider not found',
+    });
+  }
+
+  if (npm !== undefined) {
+    modelModel.updateProviderNpm(provider.id, npm || null);
+  }
+
+  if (options && options.length > 0) {
+    modelModel.updateProviderOptions(provider.id, options);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const updateStmt = db.prepare('UPDATE providers SET updated_at = ? WHERE id = ?');
+  updateStmt.run(now, provider.id);
+  syncConfigProvider();
+
+  return reply.send({
+    code: RESPONSE_CODES.SUCCESS,
+    data: { id: provider.id },
+  });
+}
+
+export async function updateModelHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { id, provider_id, options } = request.body as UpdateModelRequest;
+
+  if (!id || !provider_id) {
+    return reply.send({
+      code: RESPONSE_CODES.INVALID_REQUEST,
+      message: 'Model ID and provider ID are required',
+    });
+  }
+
+  const model = modelModel.findModelById(id);
+  if (!model) {
+    return reply.send({
+      code: RESPONSE_CODES.NOT_FOUND,
+      message: 'Model not found',
+    });
+  }
+
+  if (options && options.length > 0) {
+    modelModel.updateModelOptions(model.id, options);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const updateStmt = db.prepare('UPDATE models SET updated_at = ? WHERE id = ?');
+  updateStmt.run(now, model.id);
+  syncConfigProvider();
+
+  return reply.send({
+    code: RESPONSE_CODES.SUCCESS,
+    data: { id: model.id, provider_id: model.provider_id },
   });
 }

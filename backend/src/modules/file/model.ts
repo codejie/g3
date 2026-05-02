@@ -1,10 +1,17 @@
 import { resolve, join, dirname, basename, extname } from 'path';
-import { mkdirSync, existsSync, statSync, readdirSync, unlinkSync, rmdirSync, createReadStream, createWriteStream, readFileSync } from 'fs';
+import { mkdirSync, existsSync, statSync, readdirSync, unlinkSync, rmdirSync, createReadStream, createWriteStream, readFileSync, writeFileSync } from 'fs';
 import { mkdir, rm, stat, readdir, unlink, rmdir } from 'fs/promises';
 import { createHash } from 'crypto';
 import db from '../../utils/db';
 import { v4 as uuidv4 } from 'uuid';
 import { getProjectWorkspacePath } from '../project/handler';
+
+const OPENCODE_CONFIG_DIR = process.env.VITE_OPENCODE_CONFIG_PATH
+  ? resolve(process.env.VITE_OPENCODE_CONFIG_PATH.replace(/^~/, process.env.HOME || ''))
+  : resolve(process.env.HOME || '/root', '.config/opencode');
+
+const DEFAULT_OPENCODE_JSON = JSON.stringify({}, null, 2);
+const DEFAULT_CONFIG_JSON = JSON.stringify({}, null, 2);
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico']);
 const BINARY_EXTENSIONS = new Set(['zip', 'tar', 'gz', 'rar', '7z', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'exe', 'dll', 'so', 'dylib', 'woff', 'woff2', 'ttf', 'eot', 'otf', 'mp3', 'mp4', 'avi', 'mov', 'wmv', 'flac', 'ogg', 'wav']);
@@ -173,4 +180,74 @@ export async function saveUploadedFile(userId: string, projectId: string, relati
   const targetPath = join(targetDir, filename);
   const { copyFile } = await import('fs/promises');
   await copyFile(sourcePath, targetPath);
+}
+
+export function readOpencodeConfig(name: string): { content: string; name: string } {
+  if (!name.endsWith('.json')) {
+    throw new Error('Only .json config files are supported');
+  }
+  const allowedNames = ['opencode.json', 'config.json'];
+  if (!allowedNames.includes(name)) {
+    throw new Error(`Config file "${name}" is not allowed. Allowed: ${allowedNames.join(', ')}`);
+  }
+
+  const filePath = resolve(OPENCODE_CONFIG_DIR, name);
+  if (!filePath.startsWith(OPENCODE_CONFIG_DIR)) {
+    throw new Error('Path traversal detected');
+  }
+
+  if (!existsSync(filePath)) {
+    const defaultContent = name === 'opencode.json' ? DEFAULT_OPENCODE_JSON : DEFAULT_CONFIG_JSON;
+    return { content: defaultContent, name };
+  }
+
+  const content = readFileSync(filePath, 'utf-8');
+  return { content, name };
+}
+
+export function saveOpencodeConfig(name: string, content: string): void {
+  if (!name.endsWith('.json')) {
+    throw new Error('Only .json config files are supported');
+  }
+  const allowedNames = ['opencode.json', 'config.json'];
+  if (!allowedNames.includes(name)) {
+    throw new Error(`Config file "${name}" is not allowed. Allowed: ${allowedNames.join(', ')}`);
+  }
+
+  const filePath = resolve(OPENCODE_CONFIG_DIR, name);
+  if (!filePath.startsWith(OPENCODE_CONFIG_DIR)) {
+    throw new Error('Path traversal detected');
+  }
+
+  if (!existsSync(OPENCODE_CONFIG_DIR)) {
+    mkdirSync(OPENCODE_CONFIG_DIR, { recursive: true });
+  }
+
+  writeFileSync(filePath, content, 'utf-8');
+}
+
+export function downloadOpencodeConfig(name: string): { stream: NodeJS.ReadableStream; filename: string } {
+  if (!name.endsWith('.json')) {
+    throw new Error('Only .json config files are supported');
+  }
+  const allowedNames = ['opencode.json', 'config.json'];
+  if (!allowedNames.includes(name)) {
+    throw new Error(`Config file "${name}" is not allowed. Allowed: ${allowedNames.join(', ')}`);
+  }
+
+  const filePath = resolve(OPENCODE_CONFIG_DIR, name);
+  if (!filePath.startsWith(OPENCODE_CONFIG_DIR)) {
+    throw new Error('Path traversal detected');
+  }
+
+  if (!existsSync(filePath)) {
+    const defaultContent = name === 'opencode.json' ? DEFAULT_OPENCODE_JSON : DEFAULT_CONFIG_JSON;
+    const tmpDir = resolve(process.cwd(), 'data/tmp');
+    if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
+    const tmpPath = join(tmpDir, `opencode-config-default-${Date.now()}-${name}`);
+    writeFileSync(tmpPath, defaultContent, 'utf-8');
+    return { stream: createReadStream(tmpPath), filename: name };
+  }
+
+  return { stream: createReadStream(filePath), filename: name };
 }

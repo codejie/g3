@@ -9,3 +9,15 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+declare module 'element-plus/dist/locale/zh-cn.mjs' {
+  import type { Language } from 'element-plus/dist/locale';
+  const locale: Language;
+  export default locale;
+}
+
+declare module 'element-plus/dist/locale/en.mjs' {
+  import type { Language } from 'element-plus/dist/locale';
+  const locale: Language;
+  export default locale;
+}

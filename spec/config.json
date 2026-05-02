@@ -1,0 +1,64 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "command": {
+    "gquota": {
+      "template": "Retrieve Gemini Code Assist quota usage for the current authenticated account.\n\nImmediately call `gemini_quota` with no arguments and return its output verbatim.\nDo not call other tools.\n",
+      "description": "Show Gemini Code Assist quota usage"
+    }
+  },
+  "plugin": [
+    "opencode-gemini-auth@latest"
+  ],
+  "username": "jie",
+  "mode": {},
+  "agent": {},
+  "provider": {
+    "wenwen-ai": {
+      "name": "wenwen-ai",
+      "models": {
+        "claude": {
+          "name": "claude"
+        }
+      },
+      "options": {
+        "baseURL": "https://code.wenwen-ai.com"
+      }
+    },
+    "ollama": {
+      "name": "ollama",
+      "npm": "@ai-sdk/openai-compatible",
+      "models": {
+        "qwen3:8b": {
+          "name": "qwen3:8b"
+        },
+	"gemma4:26b": {
+	  "name": "gemma4:26b"
+	}
+      },
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      }
+    },
+    "test": {
+      "name": "tt",
+      "models": {
+        "models": {
+          "name": "tm"
+        }
+      }
+    }
+  },
+  "mcp": {
+    "chrome-devtools": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ]
+    }
+  },
+  "permission": {
+    "*": "allow"
+  }
+}

@@ -135,6 +135,29 @@ interface UpdateProfileResult {
 }
 ```
 
+### 删除user接口
+- **接口描述**: 删除用户接口，允许管理员删除指定用户,删除用户时会同时删除关联的Profile信息
+- **请求结构**:
+```typescript
+interface DeleteUserRequest extends BaseRequest {
+  id: string; // 用户ID
+}
+```
+- **响应结果数据**: 无结果数据返回，使用 `BaseResponse<void>`
+
+
+### 改密user接口
+- **接口描述**: 修改用户密码接口，允许admin修改user的密码
+- **请求结构**:
+```typescript
+interface ChangePasswordRequest extends BaseRequest {
+  id: string; // 用户ID
+  new_password: string; // 新密码
+}
+```
+- **响应结果数据**: 无结果数据返回，使用 `BaseResponse<void>`
+
+
 # 模型/Model接口设计
 描述了模型的Provider和Model相关接口的设计
 ## 模块类型描述
@@ -142,18 +165,30 @@ interface UpdateProfileResult {
 - **Model**: 模型实体，包含以下字段：
   - id: 模型ID，唯一标识符
   - provider_id: 模型提供者ID，关联Provider实体
-  - name: 模型名称，字符串类型
-  - context_size: 模型上下文长度，数字类型
+  - model_id: 模型ID，字符串类型，如gpt-3.5-turbo、gpt-4等
   - disabled: 模型是否禁用，int类型（0表示启用，1表示禁用）,default为0
-  - description?: 模型描述信息，字符串类型
   - created: 模型创建时间，日期时间类型
+  - updated: 模型更新时间，日期时间类型
+
+- **Model_Options**: 模型选项实体，包含以下字段：
+  - id: 模型选项ID，唯一标识符
+  - model_id: 模型ID，关联Model实体
+  - key: 模型选项键，字符串类型，如name, context_size, description, temperature, top_p等
+  - value: 模型选项值，字符串类型
 
 - **Provider**: 模型提供者实体，包含以下字段：
   - id: 提供者ID，唯一标识符
-  - name: 提供者名称，字符串类型
+  - provider_id: 提供者ID，字符串类型，如openai、azure、anthropic等
+  - npm: 提供者npm包名，字符串类型，如openai、azure、anthropic等, default is NULL
   - disabled: 提供者是否禁用，int类型（0表示启用，1表示禁用）,default为0
-  - description?: 提供者描述信息，字符串类型
   - created: 提供者创建时间，日期时间类型
+  - updated: 提供者更新时间，日期时间类型
+
+- **Provider_Options**: 模型提供者选项实体，包含以下字段：
+  - id: 提供者选项ID，唯一标识符
+  - provider_id: 提供者ID，关联Provider实体
+  - key: 提供者选项键，字符串类型，如name, api_key, endpoint_url, region等
+  - value: 提供者选项值，字符串类型 
 
 ## 接口报文结构定义
 
@@ -166,6 +201,24 @@ interface GetModelsRequest extends BaseRequest {
 ```
 - **响应结果数据**:
 ```typescript
+interface Options {
+  key: string; // 选项键，如name, context_size, description, temperature, top_p等
+  value: string; // 选项值
+}
+
+interface Provider {
+  id: string; // 提供者ID
+  provider_id: string; // 提供者ID字符串，如openai、azure、anthropic等
+  npm?: string; // 提供者npm包名，如openai、azure、anthropic等, default is NULL
+  options: Options[]; // 提供者选项列表，如name, api_key, endpoint_url, region等
+}
+
+interface Model {
+  id: string; // 模型ID
+  model_id: string; // 模型ID字符串，如gpt-3.5-turbo、gpt-4等
+  options: Options[]; // 模型选项列表，如name, context_size, description, temperature, top_p等
+}
+
 interface GetModelsResult {
   items: {
     provider: Provider; // 模型提供者信息
@@ -178,8 +231,9 @@ interface GetModelsResult {
 - **请求结构**:
 ```typescript
 interface AddProviderRequest extends BaseRequest {
-  name: string; // 提供者名称
-  description?: string; // 可选，提供者描述信息
+  id: string; // 提供者ID/privider_id字符串，如openai、azure、anthropic等
+  npm?: string; // 提供者npm包名，如openai、azure、anthropic等, default is NULL
+  options: Options[]; // 提供者选项列表，如name, api_key, endpoint_url, region等
 }
 ```
 - **响应结果数据**:
@@ -194,13 +248,14 @@ interface AddModelResult {
 ```typescript
 interface AddModelRequest extends BaseRequest {
   provider_id: string; // 模型提供者ID
-  name: string; // 模型名称
-  description?: string; // 可选，模型描述信息
+  id: string; // 模型ID字符串，如gpt-3.5-turbo、gpt-4等
+  options: Options[]; // 模型选项列表，如name, context_size, description, temperature, top_p等
 }
 ```
 - **响应结果数据**:
 ```typescript
 interface AddModelResult {
+  id: string; // 新增的模型ID
   provider_id: string; // 新增的模型提供者ID
 }
 ```
@@ -215,6 +270,7 @@ interface DeleteModelRequest extends BaseRequest {
 - **响应结果数据**:
 ```typescript
 interface DeleteModelResult {
+  id: string; // 删除的模型ID
   provider_id: string; // 删除的模型提供者ID
 }
 ```
@@ -227,6 +283,38 @@ interface DeleteProviderRequest extends BaseRequest {
 }
 ```
 - **响应结果数据**: 无结果数据返回，使用 `BaseResponse<void>`
+
+### 更新供应商接口
+- **请求结构**:
+```typescript
+interface UpdateProviderRequest extends BaseRequest {
+  id: string; // 模型提供者ID
+  options?: Options[]; // 可选，提供者选项列表，如name, api_key, endpoint_url, region等
+}
+```
+- **响应结果数据**:
+```typescript
+interface UpdateProviderResult {
+  id: string; // 更新的模型提供者ID
+}
+```
+
+### 更新模型接口
+- **请求结构**:
+```typescript
+interface UpdateModelRequest extends BaseRequest {
+  id: string; // 模型ID
+  provider_id: string; // 模型提供者ID
+  options?: Options[]; // 可选，模型选项列表，如name, context_size, description, temperature, top_p等
+}
+```
+- **响应结果数据**:
+```typescript
+interface UpdateModelResult {
+  id: string; // 更新的模型ID
+  provider_id: string; // 更新的模型提供者ID
+}
+```
 
 # 项目/Project接口设计
 描述了项目相关接口的设计，包括创建项目、获取项目列表、更新项目和删除项目等功能
@@ -415,6 +503,30 @@ interface UploadFileRequest extends BaseRequest {
   file: File; // 文件对象
 }
 ```
+
+### 下载opencode配置文件接口
+- **接口描述**: 下载opencode配置文件接口，允许用户下载项目目录下的opencode配置文件，如`opencode.json`，如果文件不存在则返回默认配置内容
+- **请求结构**:
+```typescript
+interface DownloadOpencodeConfigRequest extends BaseRequest {
+  name: string; // 配置文件名称，默认为opencode.json
+}
+```
+- **响应结果数据**: 无响应数据返回，使用 `BaseResponse<void>`
+
+### 上传opencode配置文件接口
+- **接口描述**: 上传opencode配置文件接口，允许用户上传项目目录下的opencode配置文件，如`opencode.json`，上传时会覆盖原有配置文件
+- **请求结构**:
+```typescript
+interface UploadOpencodeConfigRequest extends BaseRequest {
+  name: string; // 配置文件名称，默认为opencode.json
+  file: File; // 文件对象
+}
+```
+- **响应结果数据**: 无响应数据返回，使用 `BaseResponse<void>`
+
+
+
 - **响应结果数据**: 无响应数据返回，使用 `BaseResponse<void>`
 
 # Logs接口设计
@@ -448,3 +560,52 @@ interface GetLogsResult {
 }
 ```
 
+# Skills接口设计
+描述了技能相关接口的设计，包括获取技能列表和执行技能等功能
+## 模块类型描述
+- **Skill**: 技能实体，包含以下字段：
+  - id: 技能ID，唯一标识符
+  - name: 技能名称，字符串类型
+  - description?: 技能描述信息，字符串类型（可选）
+  - path: 技能文件路径，字符串类型
+  - created: 技能创建时间，日期时间类型
+
+## 接口报文结构定义
+### 下载技能接口
+- **接口描述**: 下载技能接口，允许用户下载指定技能文件
+- **请求结构**:
+```typescript
+interface DownloadSkillRequest extends BaseRequest {
+  name: string; // 技能名称
+}
+```
+- **响应结果数据**: 无响应数据返回，使用 `BaseResponse<void>`
+
+### 上传技能接口
+- **接口描述**: 上传技能接口，允许用户上传技能文件
+- **请求结构**: 无请求数据，使用 `BaseRequest<void>`，上传文件
+- **响应结果数据**: 无响应数据返回，使用 `BaseResponse<void>`
+
+### 删除技能接口
+- **接口描述**: 删除技能接口
+- **请求结构**:
+```typescript
+interface DeleteSkillRequest extends BaseRequest {
+  name: string; // 技能名称
+}
+```
+- **响应结果数据**: 无响应数据返回，使用 `BaseResponse<void>`
+
+# System接口设计
+描述了系统相关接口的设计，包括获取系统状态和配置等功能
+## 接口报文结构定义
+### 执行脚本接口
+- **接口描述**: 执行脚本接口，允许用户执行指定的系统脚本，如系统健康检查、环境信息获取等
+- **请求结构**:
+```typescript 
+interface ExecuteScriptRequest extends BaseRequest {
+  name: string; // 脚本名称，如health_check、env_info等
+  params?: Record<string, any>; // 可选，脚本参数
+}
+``` 
+- **响应结果数据**: 无响应数据返回，使用 `BaseResponse<void>`

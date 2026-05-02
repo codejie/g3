@@ -123,11 +123,19 @@ export async function downloadBlob(path: string, body?: unknown, fallbackName?: 
     throw new Error('Unauthorized')
   }
 
-  const contentType = response.headers.get('content-type') || ''
-
-  if (!response.ok || contentType.includes('application/json')) {
+  if (!response.ok) {
     const error = await response.json().catch(() => ({ message: response.statusText }))
     throw new Error(error.message || `HTTP ${response.status}`)
+  }
+
+  // If content-type is JSON and the response looks like an API error (has "code" field), treat as error
+  const contentType = response.headers.get('content-type') || ''
+  if (contentType.includes('application/json')) {
+    const cloned = response.clone()
+    const maybeError = await cloned.json().catch(() => null)
+    if (maybeError && typeof maybeError.code === 'number' && maybeError.code !== 0) {
+      throw new Error(maybeError.message || 'Request failed')
+    }
   }
 
   const blob = await response.blob()

@@ -9,6 +9,7 @@ export interface UserRow {
   disabled: number;
   profile_id: string | null;
   created_at: number;
+  updated_at: number;
 }
 
 export interface CreateUserData {
@@ -41,7 +42,7 @@ const userModel: UserModel = {
 
   create(data: CreateUserData): UserRow {
     const userId = uuidv4();
-    const profileId = data.profileId || uuidv4();
+    const profileId = data.profileId || null;
     const stmt = db.prepare(
       'INSERT INTO users (id, username, password, role, profile_id) VALUES (?, ?, ?, ?, ?)'
     );

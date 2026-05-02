@@ -42,7 +42,7 @@
         <button
           v-if="node.type === 'directory'"
           class="node-action-btn"
-          title="进入目录"
+          :title="t('fileTree.enterDir')"
           @click.stop="handleEnter"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -50,7 +50,7 @@
         <button
           class="node-action-btn"
           :class="{ active: downloading }"
-          title="下载"
+          :title="t('fileTree.download')"
           @click.stop="handleDownload"
         >
           <svg v-if="!downloading" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -85,6 +85,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { fileApi, setConfig as setExtConfig, setAuthToken } from '../../apis/extension/api';
 import { useUserStore } from '../../store/userStore';
 import { ElMessageBox, ElMessage } from 'element-plus';
@@ -109,6 +110,7 @@ const emit = defineEmits<{
   (e: 'preview', path: string, name: string, size: number): void;
 }>();
 
+const { t } = useI18n();
 const userStore = useUserStore();
 const expanded = ref(false);
 
@@ -172,14 +174,15 @@ const downloading = ref(false);
 const handleDownload = async () => {
   if (downloading.value) return;
 
-  const typeLabel = props.node.type === 'directory' ? '目录' : '文件';
-  const hint = props.node.type === 'directory' ? '\n目录将打包为 .tar.gz 后下载' : '';
+  const confirmMsg = props.node.type === 'directory'
+    ? t('fileTree.downloadConfirmDir', { name: props.node.name })
+    : t('fileTree.downloadConfirmFile', { name: props.node.name });
 
   try {
     await ElMessageBox.confirm(
-      `确认下载${typeLabel} "${props.node.name}" 吗？${hint}`,
-      '下载确认',
-      { confirmButtonText: '下载', cancelButtonText: '取消', type: 'info' }
+      confirmMsg,
+      t('fileTree.downloadTitle'),
+      { confirmButtonText: t('fileTree.downloadBtn'), cancelButtonText: t('fileTree.cancelBtn'), type: 'info' }
     );
   } catch {
     return;
@@ -198,9 +201,9 @@ const handleDownload = async () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    ElMessage.success(`"${filename}" 下载成功`);
+    ElMessage.success(t('fileTree.downloadSuccess', { name: filename }));
   } catch (error: any) {
-    ElMessage.error(error.message || '下载失败');
+    ElMessage.error(error.message || t('fileTree.downloadFailed'));
   } finally {
     downloading.value = false;
   }

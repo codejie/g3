@@ -5,6 +5,8 @@ import {
   addModelHandler,
   deleteModelHandler,
   deleteProviderHandler,
+  updateProviderHandler,
+  updateModelHandler,
 } from './handler';
 import { authenticateUser, authenticateAdmin } from '../../middleware/auth';
 
@@ -18,51 +20,6 @@ const getModelsSchema = {
       provider_id: { type: 'string', description: 'Filter by provider ID' },
     },
   },
-  response: {
-    200: {
-      type: 'object',
-      properties: {
-        code: { type: 'number' },
-        message: { type: 'string' },
-        data: {
-          type: 'object',
-          properties: {
-            items: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  provider: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'string' },
-                      name: { type: 'string' },
-                      description: { type: 'string' },
-                      created: { type: 'number' },
-                    },
-                  },
-                  models: {
-                    type: 'array',
-                    items: {
-                      type: 'object',
-                      properties: {
-            id: { type: 'string' },
-            provider_id: { type: 'string' },
-            name: { type: 'string' },
-            description: { type: 'string' },
-            context_size: { type: 'number' },
-            created: { type: 'number' },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  },
 };
 
 const addProviderSchema = {
@@ -70,25 +27,22 @@ const addProviderSchema = {
   tags: ['Model'],
   body: {
     type: 'object',
-    required: ['name'],
+    required: ['id'],
     properties: {
       requestId: { type: 'string' },
-      name: { type: 'string', description: 'Provider name' },
-      description: { type: 'string', description: 'Provider description' },
-    },
-  },
-  response: {
-    200: {
-      type: 'object',
-      properties: {
-        code: { type: 'number' },
-        message: { type: 'string' },
-        data: {
+      id: { type: 'string', description: 'Provider ID string (e.g. openai, azure, anthropic)' },
+      npm: { type: 'string', description: 'NPM package name for the provider adapter' },
+      options: {
+        type: 'array',
+        items: {
           type: 'object',
+          required: ['key', 'value'],
           properties: {
-            id: { type: 'string' },
+            key: { type: 'string' },
+            value: { type: 'string' },
           },
         },
+        description: 'Provider options',
       },
     },
   },
@@ -99,27 +53,22 @@ const addModelSchema = {
   tags: ['Model'],
   body: {
     type: 'object',
-    required: ['provider_id', 'name'],
+    required: ['provider_id', 'id'],
     properties: {
       requestId: { type: 'string' },
       provider_id: { type: 'string', description: 'Provider ID' },
-      name: { type: 'string', description: 'Model name' },
-      description: { type: 'string', description: 'Model description' },
-      context_size: { type: 'number', description: 'Context size in tokens' },
-    },
-  },
-  response: {
-    200: {
-      type: 'object',
-      properties: {
-        code: { type: 'number' },
-        message: { type: 'string' },
-        data: {
+      id: { type: 'string', description: 'Model ID string (e.g. gpt-3.5-turbo, gpt-4)' },
+      options: {
+        type: 'array',
+        items: {
           type: 'object',
+          required: ['key', 'value'],
           properties: {
-            provider_id: { type: 'string' },
+            key: { type: 'string' },
+            value: { type: 'string' },
           },
         },
+        description: 'Model options',
       },
     },
   },
@@ -137,21 +86,6 @@ const deleteModelSchema = {
       provider_id: { type: 'string', description: 'Provider ID' },
     },
   },
-  response: {
-    200: {
-      type: 'object',
-      properties: {
-        code: { type: 'number' },
-        message: { type: 'string' },
-        data: {
-          type: 'object',
-          properties: {
-            provider_id: { type: 'string' },
-          },
-        },
-      },
-    },
-  },
 };
 
 const deleteProviderSchema = {
@@ -165,12 +99,55 @@ const deleteProviderSchema = {
       id: { type: 'string', description: 'Provider ID' },
     },
   },
-  response: {
-    200: {
-      type: 'object',
-      properties: {
-        code: { type: 'number' },
-        message: { type: 'string' },
+};
+
+const updateProviderSchema = {
+  description: 'Update a provider',
+  tags: ['Model'],
+  body: {
+    type: 'object',
+    required: ['id'],
+    properties: {
+      requestId: { type: 'string' },
+      id: { type: 'string', description: 'Provider ID' },
+      npm: { type: 'string', description: 'NPM package name for the provider adapter' },
+      options: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['key', 'value'],
+          properties: {
+            key: { type: 'string' },
+            value: { type: 'string' },
+          },
+        },
+        description: 'Provider options to update',
+      },
+    },
+  },
+};
+
+const updateModelSchema = {
+  description: 'Update a model',
+  tags: ['Model'],
+  body: {
+    type: 'object',
+    required: ['id', 'provider_id'],
+    properties: {
+      requestId: { type: 'string' },
+      id: { type: 'string', description: 'Model ID' },
+      provider_id: { type: 'string', description: 'Provider ID' },
+      options: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['key', 'value'],
+          properties: {
+            key: { type: 'string' },
+            value: { type: 'string' },
+          },
+        },
+        description: 'Model options to update',
       },
     },
   },
@@ -182,6 +159,8 @@ export async function modelRoutes(fastify: FastifyInstance) {
   fastify.post('/api/model/add', { preHandler: [authenticateAdmin], schema: addModelSchema }, addModelHandler);
   fastify.post('/api/model/delete', { preHandler: [authenticateAdmin], schema: deleteModelSchema }, deleteModelHandler);
   fastify.post('/api/model/provider/delete', { preHandler: [authenticateAdmin], schema: deleteProviderSchema }, deleteProviderHandler);
+  fastify.post('/api/model/provider/update', { preHandler: [authenticateAdmin], schema: updateProviderSchema }, updateProviderHandler);
+  fastify.post('/api/model/update', { preHandler: [authenticateAdmin], schema: updateModelSchema }, updateModelHandler);
 }
 
 export default modelRoutes;

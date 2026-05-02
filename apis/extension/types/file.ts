@@ -53,3 +53,34 @@ export interface ReadFileResult {
 }
 
 export type ReadFileResponse = BaseResponse<ReadFileResult>
+
+// ===== OpenCode Config =====
+export interface DownloadOpencodeConfigRequest extends BaseRequest {
+  name: string
+}
+
+export type DownloadOpencodeConfigResponse = BaseResponse<void>
+
+export interface UploadOpencodeConfigRequest extends BaseRequest {
+  name: string
+}
+
+export type UploadOpencodeConfigResponse = BaseResponse<void>
+
+export interface ReadOpencodeConfigRequest extends BaseRequest {
+  name: string
+}
+
+export interface ReadOpencodeConfigResult {
+  content: string
+  name: string
+}
+
+export type ReadOpencodeConfigResponse = BaseResponse<ReadOpencodeConfigResult>
+
+export interface SaveOpencodeConfigRequest extends BaseRequest {
+  name: string
+  content: string
+}
+
+export type SaveOpencodeConfigResponse = BaseResponse<void>

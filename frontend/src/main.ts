@@ -4,6 +4,7 @@ import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
 import App from './App.vue';
 import router from './router';
+import i18n from './locales';
 import './style.css';
 import { useUserStore } from './store/userStore';
 import { onAuthFailure } from './apis/extension/api/request';
@@ -21,6 +22,7 @@ onAuthFailure(() => {
   router.push('/login')
 })
 
+app.use(i18n);
 app.use(router);
 app.use(ElementPlus);
 

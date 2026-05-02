@@ -26,12 +26,16 @@ export const useModelStore = defineStore('model', () => {
     return null
   })
 
+  const getOptionValue = (options: { key: string; value: string }[], key: string): string => {
+    return options.find(o => o.key === key)?.value || ''
+  }
+
   const currentDisplay = computed(() => {
     const provider = selectedProvider.value
     const model = selectedModel.value
     if (!provider && !model) return '选择模型'
-    if (!model) return provider!.name
-    return model.name
+    if (!model) return getOptionValue(provider!.options, 'name') || provider!.provider_id
+    return getOptionValue(model.options, 'name') || model.model_id
   })
 
   const selectModel = (providerId: string, modelId: string) => {

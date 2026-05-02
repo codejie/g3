@@ -10,6 +10,10 @@ import type {
   DeleteModelResponse,
   DeleteProviderRequest,
   DeleteProviderResponse,
+  UpdateProviderRequest,
+  UpdateProviderResponse,
+  UpdateModelRequest,
+  UpdateModelResponse,
 } from '../types/model'
 
 export const modelApi = {
@@ -22,4 +26,8 @@ export const modelApi = {
   deleteModel: (data: DeleteModelRequest) => post<DeleteModelResponse>('/model/delete', data),
 
   deleteProvider: (data: DeleteProviderRequest) => post<DeleteProviderResponse>('/model/provider/delete', data),
+
+  updateProvider: (data: UpdateProviderRequest) => post<UpdateProviderResponse>('/model/provider/update', data),
+
+  updateModel: (data: UpdateModelRequest) => post<UpdateModelResponse>('/model/update', data),
 }

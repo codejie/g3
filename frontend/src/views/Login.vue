@@ -7,7 +7,7 @@
           <div class="logo-icon">
 <span>AG</span>
       </div>
-      <span class="brand-text">AppGenius</span>
+      <span class="brand-text">{{ $t('app.name') }}</span>
         </div>
       </div>
     </header>
@@ -30,35 +30,35 @@
       <!-- Right: Login Panel -->
       <div class="login-right">
         <div class="login-panel">
-          <h2 class="login-title">登录</h2>
+          <h2 class="login-title">{{ $t('login.title') }}</h2>
           <el-form :model="form" class="login-form">
             <el-form-item>
-              <el-input
-                v-model="form.username"
-                placeholder="用户名"
-                size="large"
-                :prefix-icon="User"
-              />
+        <el-input
+          v-model="form.username"
+          :placeholder="$t('login.username')"
+          size="large"
+          :prefix-icon="User"
+        />
             </el-form-item>
             <el-form-item>
-              <el-input
-                v-model="form.password"
-                type="password"
-                placeholder="密码"
-                size="large"
-                :prefix-icon="Lock"
-                show-password
-              />
+        <el-input
+          v-model="form.password"
+          type="password"
+          :placeholder="$t('login.password')"
+          size="large"
+          :prefix-icon="Lock"
+          show-password
+        />
             </el-form-item>
 <el-form-item>
-      <el-checkbox v-model="form.isAdmin">管理员登录</el-checkbox>
+        <el-checkbox v-model="form.isAdmin">{{ $t('login.adminLogin') }}</el-checkbox>
     </el-form-item>
     <el-form-item>
-      <el-checkbox v-model="form.remember">记住登录状态</el-checkbox>
+        <el-checkbox v-model="form.remember">{{ $t('login.rememberMe') }}</el-checkbox>
     </el-form-item>
     <el-form-item class="button-group">
-              <el-button size="large" @click="handleCancel">取消</el-button>
-              <el-button type="primary" size="large" @click="handleLogin">登录</el-button>
+        <el-button size="large" @click="handleCancel">{{ $t('login.cancel') }}</el-button>
+        <el-button type="primary" size="large" @click="handleLogin">{{ $t('login.submit') }}</el-button>
             </el-form-item>
           </el-form>
         </div>
@@ -70,6 +70,7 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { User, Lock } from '@element-plus/icons-vue'
 import { userApi, setConfig } from '../apis/extension/api/userApi'
 import { useUserStore } from '../store/userStore'
@@ -82,6 +83,7 @@ if (!backendUrl) {
 setConfig({ baseURL: backendUrl })
 
 const router = useRouter()
+const { t } = useI18n()
 const userStore = useUserStore()
 
 const form = reactive({
@@ -104,7 +106,7 @@ onMounted(() => {
 
 const handleLogin = async () => {
   if (!form.username || !form.password) {
-    ElMessage.warning('请输入用户名和密码')
+    ElMessage.warning(t('login.inputRequired'))
     return
   }
 
@@ -135,10 +137,10 @@ if (response.code === 0 && response.data) {
           router.push('/home')
         }
       } else {
-        ElMessage.error(response.message || '登录失败')
+        ElMessage.error(response.message || t('login.failed'))
       }
   } catch (error) {
-    ElMessage.error('登录请求失败')
+    ElMessage.error(t('login.requestFailed'))
     console.error('Login error:', error)
   }
 }

@@ -1,37 +1,37 @@
 <template>
-  <el-dialog v-model="visible" title="项目详情" width="400px" :close-on-click-modal="false" @close="handleClose">
+  <el-dialog v-model="visible" :title="$t('projectDetail.title')" width="400px" :close-on-click-modal="false" @close="handleClose">
     <div v-if="project" class="detail-content">
       <div class="detail-row">
-        <span class="detail-label">名称</span>
+        <span class="detail-label">{{ $t('projectDetail.name') }}</span>
         <span v-if="!editing" class="detail-value">{{ project.name }}</span>
         <el-input v-else v-model="editForm.name" size="small" />
       </div>
       <div class="detail-row">
-        <span class="detail-label">类型</span>
+        <span class="detail-label">{{ $t('projectDetail.type') }}</span>
         <span v-if="!editing" class="detail-value">{{ project.type }}</span>
         <el-select v-else v-model="editForm.type" size="small" style="width: 100%">
-          <el-option label="应用开发" value="app" />
-          <el-option label="网站建设" value="web" />
-          <el-option label="数据分析" value="data" />
-          <el-option label="其他" value="other" />
+      <el-option :label="$t('projectDetail.typeApp')" value="app" />
+        <el-option :label="$t('projectDetail.typeWeb')" value="web" />
+        <el-option :label="$t('projectDetail.typeData')" value="data" />
+        <el-option :label="$t('projectDetail.typeOther')" value="other" />
         </el-select>
       </div>
       <div class="detail-row">
-        <span class="detail-label">描述</span>
+        <span class="detail-label">{{ $t('projectDetail.description') }}</span>
         <span v-if="!editing" class="detail-value">{{ project.description || '-' }}</span>
         <el-input v-else v-model="editForm.description" type="textarea" :rows="3" size="small" />
       </div>
       <div class="detail-row">
-        <span class="detail-label">创建时间</span>
+        <span class="detail-label">{{ $t('projectDetail.createdAt') }}</span>
         <span class="detail-value">{{ formatDate(project.created) }}</span>
       </div>
     </div>
     <template #footer>
       <div class="dialog-footer">
-        <el-button v-if="!editing" @click="editing = true">编辑</el-button>
-        <el-button v-else @click="cancelEdit">取消</el-button>
-        <el-button v-if="!editing" type="primary" @click="handleClose">关闭</el-button>
-        <el-button v-else type="primary" :loading="submitting" @click="handleSubmit">提交</el-button>
+    <el-button v-if="!editing" @click="editing = true">{{ $t('projectDetail.edit') }}</el-button>
+    <el-button v-else @click="cancelEdit">{{ $t('projectDetail.cancel') }}</el-button>
+    <el-button v-if="!editing" type="primary" @click="handleClose">{{ $t('projectDetail.close') }}</el-button>
+    <el-button v-else type="primary" :loading="submitting" @click="handleSubmit">{{ $t('projectDetail.submit') }}</el-button>
       </div>
     </template>
   </el-dialog>
@@ -39,6 +39,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { projectApi, setConfig, setAuthToken } from '../../apis/extension/api'
 import { useUserStore } from '../../store/userStore'
 import { ElMessage } from 'element-plus'
@@ -57,6 +58,7 @@ const emit = defineEmits<{
 }>();
 
 const userStore = useUserStore();
+const { t } = useI18n();
 const editing = ref(false);
 const submitting = ref(false);
 const editForm = ref({ name: '', type: '', description: '' });
@@ -105,7 +107,7 @@ const handleSubmit = async () => {
       type: editForm.value.type,
       description: editForm.value.description || undefined,
     });
-    ElMessage.success('项目更新成功');
+    ElMessage.success(t('projectDetail.updateSuccess'));
     editing.value = false;
     emit('updated', {
       ...props.project,
@@ -115,7 +117,7 @@ const handleSubmit = async () => {
     });
   } catch (error) {
     console.error('[ProjectDetailDialog] Failed to update project:', error);
-    ElMessage.error('更新项目失败');
+    ElMessage.error(t('projectDetail.updateFailed'));
   } finally {
     submitting.value = false;
   }

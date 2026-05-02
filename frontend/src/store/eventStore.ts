@@ -47,7 +47,7 @@ export const useEventStore = defineStore('event', () => {
           messageStore.markReplyEnded();
         }
       },
-      onSessionIdle: (payload: { sessionID: string }) => {
+      onSessionIdle: (_payload: { sessionID: string }) => {
         // console.log('[EventStore] onSessionIdle — sessionId:', payload.sessionID);
         // fireReplyEnd({ sessionId: payload.sessionID, messageId: messageStore.currentAssistantMessageId });
         messageStore.markReplyEnded();

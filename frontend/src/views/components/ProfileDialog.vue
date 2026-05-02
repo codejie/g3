@@ -1,6 +1,6 @@
 <template>
-  <el-dialog v-model="visible" title="个人中心" width="380px" :close-on-click-modal="true" @close="$emit('update:modelValue', false)">
-    <div v-if="loading" class="profile-loading">加载中...</div>
+<el-dialog v-model="visible" :title="$t('profile.title')" width="380px" :close-on-click-modal="true" @close="$emit('update:modelValue', false)">
+  <div v-if="loading" class="profile-loading">{{ $t('profile.loading') }}</div>
     <template v-else-if="profile">
       <div class="profile-section">
         <div class="profile-avatar">
@@ -13,36 +13,36 @@
       </div>
 <div class="profile-fields">
                 <div class="profile-field">
-                  <span class="field-label">邮箱</span>
+                  <span class="field-label">{{ $t('profile.email') }}</span>
           <span class="field-value">{{ profile.email || '-' }}</span>
         </div>
         <div class="profile-field">
-          <span class="field-label">昵称</span>
+          <span class="field-label">{{ $t('profile.nickname') }}</span>
           <span class="field-value">{{ profile.nickname || '-' }}</span>
         </div>
         <div class="profile-field">
-          <span class="field-label">性别</span>
+          <span class="field-label">{{ $t('profile.gender') }}</span>
           <span class="field-value">{{ profile.gender || '-' }}</span>
         </div>
         <div class="profile-field">
-          <span class="field-label">部门</span>
+          <span class="field-label">{{ $t('profile.department') }}</span>
           <span class="field-value">{{ profile.department || '-' }}</span>
         </div>
         <div class="profile-field">
-          <span class="field-label">描述</span>
+          <span class="field-label">{{ $t('profile.description') }}</span>
           <span class="field-value">{{ profile.description || '-' }}</span>
         </div>
         <div class="profile-field">
-          <span class="field-label">备注</span>
+          <span class="field-label">{{ $t('profile.remark') }}</span>
           <span class="field-value">{{ profile.remark || '-' }}</span>
         </div>
       </div>
     </template>
-    <div v-else class="profile-empty">无法获取个人信息</div>
+    <div v-else class="profile-empty">{{ $t('profile.loadFailed') }}</div>
     <template #footer>
       <div class="dialog-footer">
-        <el-button type="danger" @click="handleLogout">登出</el-button>
-        <el-button type="primary" @click="handleClose">确定</el-button>
+    <el-button type="danger" @click="handleLogout">{{ $t('profile.logout') }}</el-button>
+    <el-button type="primary" @click="handleClose">{{ $t('profile.confirm') }}</el-button>
       </div>
     </template>
   </el-dialog>
@@ -51,6 +51,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { userApi, setConfig, setAuthToken } from '../../apis/extension/api'
 import { useUserStore } from '../../store/userStore'
 import { ElMessage } from 'element-plus'
@@ -62,6 +63,7 @@ const emit = defineEmits<{ (e: 'update:modelValue', value: boolean): void }>()
 const visible = ref(props.modelValue)
 const loading = ref(false)
 const profile = ref<Profile | null>(null)
+const { t } = useI18n()
 const userStore = useUserStore()
 const router = useRouter()
 
@@ -116,7 +118,7 @@ const handleLogout = async () => {
     setAuthToken(null)
     userStore.logout()
     visible.value = false
-    ElMessage.success('已登出')
+    ElMessage.success(t('profile.logoutSuccess'))
     router.push('/login')
   }
 }

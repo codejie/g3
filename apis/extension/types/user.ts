@@ -91,3 +91,37 @@ export interface UpdateProfileResult {
 }
 
 export type UpdateProfileResponse = BaseResponse<UpdateProfileResult>
+
+export interface DeleteUserRequest extends BaseRequest {
+  id: string
+}
+
+export type DeleteUserResponse = BaseResponse<void>
+
+export interface ChangePasswordRequest extends BaseRequest {
+  id: string
+  new_password: string
+}
+
+export type ChangePasswordResponse = BaseResponse<void>
+
+export interface GetUsersRequest extends BaseRequest {
+  role?: string
+}
+
+export interface UserItem {
+  id: string
+  username: string
+  role: string
+  disabled: number
+  profile_id: string
+  created_at: number
+  updated_at: number
+  profile?: Profile
+}
+
+export interface GetUsersResult {
+  items: UserItem[]
+}
+
+export type GetUsersResponse = BaseResponse<GetUsersResult>

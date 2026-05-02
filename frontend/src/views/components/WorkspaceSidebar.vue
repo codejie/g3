@@ -34,15 +34,15 @@
           <polyline points="15 18 9 12 15 6"/>
         </svg>
       </button>
-      <div class="vertical-title">工作空间</div>
+        <div class="vertical-title">{{ t('workspace.title') }}</div>
     </div>
 
     <div v-if="!collapsed" class="sidebar-content">
   <!-- Header -->
   <div class="sidebar-header">
-    <span class="sidebar-title">工作空间</span>
+    <span class="sidebar-title">{{ t('workspace.title') }}</span>
     <div class="header-actions">
-      <button v-if="projectId" class="action-btn" @click="refreshFiles" title="刷新">
+      <button v-if="projectId" class="action-btn" @click="refreshFiles" :title="t('workspace.refresh')">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       </button>
       <button class="collapse-btn" @click="$emit('toggle')">
@@ -57,7 +57,7 @@
   <div class="path-label">
     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
     <span>{{ currentFullPath }}</span>
-    <button v-if="pathStack.length > 1" class="action-btn back-btn" @click="handleGoBack" title="返回上一级">
+      <button v-if="pathStack.length > 1" class="action-btn back-btn" @click="handleGoBack" :title="t('workspace.back')">
       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
   </div>
@@ -67,7 +67,7 @@
         <!-- No project selected -->
         <div v-if="!projectId" class="browser-placeholder">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          <span>请先选择项目</span>
+          <span>{{ t('workspace.selectProject') }}</span>
         </div>
 
         <!-- Loading -->
@@ -82,7 +82,7 @@
         <!-- Empty directory -->
         <div v-else-if="fileTree.length === 0" class="browser-placeholder">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          <span>目录为空</span>
+          <span>{{ t('workspace.emptyDir') }}</span>
         </div>
 
       <!-- File Tree -->
@@ -132,7 +132,7 @@
         <!-- Binary file -->
         <div v-else-if="preview.fileType === 'binary'" class="preview-binary">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span>二进制文件，无法预览</span>
+          <span>{{ t('workspace.binaryFile') }}</span>
         </div>
         <!-- Markdown rendered -->
         <div v-else-if="preview.language === 'markdown' && preview.content" class="preview-markdown" v-html="renderMarkdown(preview.content)"></div>
@@ -150,6 +150,7 @@
 
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { fileApi, setConfig as setExtConfig, setAuthToken } from '../../apis/extension/api';
 import { useUserStore } from '../../store/userStore';
 import type { FileNode } from '../../apis/extension/types/file';
@@ -172,6 +173,7 @@ const emit = defineEmits<{
   (e: 'toggle'): void;
 }>();
 
+const { t } = useI18n();
 const userStore = useUserStore();
 const fileTree = ref<TreeNode[]>([]);
 const loading = ref(false);
@@ -298,7 +300,7 @@ const handlePreview = async (path: string, name: string, size: number) => {
     preview.language = '';
     preview.fileType = 'text';
     preview.mimeType = '';
-    preview.error = '文件超过 10KB，无法预览';
+    preview.error = t('workspace.fileTooLarge');
     preview.height = 120;
     return;
   }
@@ -315,7 +317,7 @@ const handlePreview = async (path: string, name: string, size: number) => {
   preview.height = getHalfPreviewHeight();
 
   if (!props.projectId) {
-    preview.error = '未选择项目';
+    preview.error = t('workspace.noProject');
     preview.loading = false;
     return;
   }
@@ -333,10 +335,10 @@ const handlePreview = async (path: string, name: string, size: number) => {
       preview.fileType = data.fileType || 'text';
       preview.mimeType = data.mimeType || '';
     } else {
-      preview.error = (response as any).message || '读取文件失败';
+      preview.error = (response as any).message || t('workspace.readFailed');
     }
   } catch (error: any) {
-    preview.error = error.message || '读取文件失败';
+    preview.error = error.message || t('workspace.readFailed');
   } finally {
     preview.loading = false;
   }
