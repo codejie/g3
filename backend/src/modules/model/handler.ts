@@ -28,6 +28,7 @@ function toProvider(row: any, options: any[]): ApiProvider {
     options: options.map((o: any) => ({ key: o.key, value: o.value })),
   };
   if (row.npm) result.npm = row.npm;
+  if (row.builtin === 1) result.builtin = true;
   return result;
 }
 
@@ -63,7 +64,7 @@ export async function getModelsHandler(request: FastifyRequest, reply: FastifyRe
 }
 
 export async function addProviderHandler(request: FastifyRequest, reply: FastifyReply) {
-  const { id, npm, options } = request.body as AddProviderRequest;
+  const { id, npm, builtin, options } = request.body as AddProviderRequest;
 
   if (!id) {
     return reply.send({
@@ -80,7 +81,7 @@ export async function addProviderHandler(request: FastifyRequest, reply: Fastify
     });
   }
 
-  const provider = modelModel.createProvider({ provider_id: id, npm, options: options || [] });
+  const provider = modelModel.createProvider({ provider_id: id, npm, builtin, options: options || [] });
   syncConfigProvider();
 
   return reply.send({
@@ -179,7 +180,7 @@ export async function deleteProviderHandler(request: FastifyRequest, reply: Fast
 }
 
 export async function updateProviderHandler(request: FastifyRequest, reply: FastifyReply) {
-  const { id, npm, options } = request.body as UpdateProviderRequest;
+  const { id, npm, builtin, options } = request.body as UpdateProviderRequest;
 
   if (!id) {
     return reply.send({
@@ -198,6 +199,10 @@ export async function updateProviderHandler(request: FastifyRequest, reply: Fast
 
   if (npm !== undefined) {
     modelModel.updateProviderNpm(provider.id, npm || null);
+  }
+
+  if (builtin !== undefined) {
+    modelModel.updateProviderBuiltin(provider.id, builtin ? 1 : 0);
   }
 
   if (options && options.length > 0) {

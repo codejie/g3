@@ -4,6 +4,7 @@
     <div class="table-card">
       <div class="table-header">
         <h3>{{ $t('skillsManagement.title') }}</h3>
+      <span v-if="restartAlertStore.skillChanged" class="restart-alert">{{ $t('restartAlert.message') }}</span>
         <div class="table-header-right">
           <button class="upload-btn" :disabled="uploading" @click="triggerFileInput">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -133,10 +134,27 @@ import { useI18n } from 'vue-i18n'
 import { skillApi as opencodeSkillApi, setConfig as setOpencodeConfig } from '../../apis/opencode/api'
 import { skillApi, setConfig as setExtensionConfig, setAuthToken } from '../../apis/extension/api'
 import { useUserStore } from '../../store/userStore'
+import { useRestartAlertStore } from '../../store/restartAlertStore'
 import type { Skill } from '../../apis/opencode/types'
 
 const { t: $t } = useI18n()
 const userStore = useUserStore()
+const restartAlertStore = useRestartAlertStore()
+
+const confirmAndMarkSkillChanged = async () => {
+  if (!restartAlertStore.skillChanged) {
+    try {
+      await ElMessageBox.alert(
+        $t('restartAlert.confirmMessage'),
+        $t('restartAlert.confirmTitle'),
+        { confirmButtonText: $t('restartAlert.confirmOk'), type: 'warning' },
+      )
+    } catch {
+      // user closed dialog, still mark
+    }
+  }
+  restartAlertStore.markSkillChanged()
+}
 
 const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001/api/'
 
@@ -213,12 +231,9 @@ const confirmDeleteSkill = async () => {
   ensureExtensionConfig()
   try {
   const result = await skillApi.delete({ name: deleteTarget.value.name })
-      if (result.code === 0) {
-        await fetchSkills()
-        ElMessageBox.alert($t('skillsManagement.restartRequiredMessage'), $t('skillsManagement.restartRequiredTitle'), {
-          confirmButtonText: $t('skillsManagement.restartRequiredConfirm'),
-          type: 'warning',
-        })
+    if (result.code === 0) {
+      await fetchSkills()
+      await confirmAndMarkSkillChanged()
     } else {
       ElMessage.error(result.message || $t('skillsManagement.deleteFailed'))
     }
@@ -256,12 +271,9 @@ const handleFileSelected = async (event: Event) => {
   try {
     ensureExtensionConfig()
     const result = await skillApi.upload(file, backendURL, userStore.token)
-      if (result.code === 0) {
-        await fetchSkills()
-        ElMessageBox.alert($t('skillsManagement.restartRequiredMessage'), $t('skillsManagement.restartRequiredTitle'), {
-          confirmButtonText: $t('skillsManagement.restartRequiredConfirm'),
-          type: 'warning',
-        })
+    if (result.code === 0) {
+      await fetchSkills()
+      await confirmAndMarkSkillChanged()
     } else {
       ElMessage.error(result.message || $t('skillsManagement.uploadFailed'))
     }
@@ -303,6 +315,13 @@ const handleFileSelected = async (event: Event) => {
   font-weight: 600;
   color: var(--text-100);
   margin: 0;
+}
+
+.restart-alert {
+  margin-left: 96px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #dc2626;
 }
 
 .skill-count {

@@ -5,6 +5,7 @@ import type { ProviderRow, ModelRow, ProviderOptionRow, ModelOptionRow, Options 
 export interface CreateProviderData {
   provider_id: string;
   npm?: string;
+  builtin?: boolean;
   options: Options[];
 }
 
@@ -24,6 +25,7 @@ export interface ModelModel {
   setProviderOptions(providerId: string, options: Options[]): void;
   updateProviderOptions(providerId: string, options: Options[]): void;
   updateProviderNpm(providerId: string, npm: string | null): void;
+  updateProviderBuiltin(providerId: string, builtin: number): void;
 
   listModels(providerId?: string): ModelRow[];
   findModelById(id: string): ModelRow | undefined;
@@ -56,10 +58,11 @@ const modelModel: ModelModel = {
     const id = uuidv4();
     const now = Math.floor(Date.now() / 1000);
     const npmValue = data.npm || null;
+    const builtinValue = data.builtin ? 1 : 0;
     const stmt = db.prepare(
-      'INSERT INTO providers (id, provider_id, npm, disabled, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)'
+      'INSERT INTO providers (id, provider_id, npm, builtin, disabled, created_at, updated_at) VALUES (?, ?, ?, ?, 0, ?, ?)'
     );
-    stmt.run(id, data.provider_id, npmValue, now, now);
+    stmt.run(id, data.provider_id, npmValue, builtinValue, now, now);
 
     this.setProviderOptions(id, data.options);
 
@@ -118,6 +121,11 @@ const modelModel: ModelModel = {
   updateProviderNpm(providerId: string, npm: string | null): void {
     const stmt = db.prepare('UPDATE providers SET npm = ? WHERE id = ?');
     stmt.run(npm, providerId);
+  },
+
+  updateProviderBuiltin(providerId: string, builtin: number): void {
+    const stmt = db.prepare('UPDATE providers SET builtin = ? WHERE id = ?');
+    stmt.run(builtin, providerId);
   },
 
   listModels(providerId?: string): ModelRow[] {

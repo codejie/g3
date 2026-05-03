@@ -14,17 +14,20 @@
       <nav class="sidebar-nav">
         <div class="nav-section">
           <div class="section-label">{{ $t('admin.panel') }}</div>
-        <button
-          v-for="item in navItems"
-          :key="item.key"
-          class="nav-item"
-          :class="{ active: activeSection === item.key, disabled: item.disabled }"
-          :disabled="item.disabled"
-          @click="!item.disabled && (activeSection = item.key)"
-        >
-            <span class="nav-icon" v-html="item.icon"></span>
-            <span class="nav-label">{{ item.label }}</span>
-          </button>
+      <button
+        v-for="item in navItems"
+        :key="item.key"
+        class="nav-item"
+        :class="{ active: activeSection === item.key, disabled: item.disabled }"
+        :disabled="item.disabled"
+        @click="!item.disabled && (activeSection = item.key)"
+      >
+        <span class="nav-icon-wrapper">
+          <span class="nav-icon" v-html="item.icon"></span>
+          <span v-if="item.key === 'opencode-config' && restartAlertStore.needsRestart" class="restart-badge">!</span>
+        </span>
+        <span class="nav-label">{{ item.label }}</span>
+      </button>
         </div>
       </nav>
 
@@ -112,6 +115,7 @@ import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../store/userStore';
+import { useRestartAlertStore } from '../store/restartAlertStore';
 import { ElMessageBox } from 'element-plus';
 import { setLocale, getLocale } from '../locales';
 import ModelManagement from './admin/ModelManagement.vue';
@@ -122,6 +126,7 @@ import OpenCodeConfig from './admin/OpenCodeConfig.vue';
 const { t } = useI18n();
 const router = useRouter();
 const userStore = useUserStore();
+const restartAlertStore = useRestartAlertStore();
 
 const activeSection = ref<string>('');
 const showUserMenu = ref(false);
@@ -288,6 +293,14 @@ const handleLogout = async () => {
   color: var(--admin-accent);
 }
 
+.nav-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .nav-icon {
   display: flex;
   align-items: center;
@@ -297,11 +310,27 @@ const handleLogout = async () => {
   transition: color 0.2s;
 }
 
-.nav-item:hover .nav-icon {
+.restart-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.nav-item:hover .nav-icon-wrapper .nav-icon {
   color: var(--admin-accent);
 }
 
-.nav-item.active .nav-icon {
+.nav-item.active .nav-icon-wrapper .nav-icon {
   color: var(--admin-accent);
 }
 

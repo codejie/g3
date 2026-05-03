@@ -4,6 +4,7 @@
   <div class="table-card">
     <div class="table-header">
       <h3>{{ $t('modelManagement.modelList') }}</h3>
+      <span v-if="restartAlertStore.modelChanged" class="restart-alert">{{ $t('restartAlert.message') }}</span>
       <div class="table-header-right">
         <el-button type="primary" size="small" :icon="Plus" @click="openAddProviderDialog">
           {{ $t('modelManagement.addProvider') }}
@@ -21,8 +22,9 @@
       <tr>
         <th class="col-expand"></th>
         <th>{{ $t('modelManagement.providerId') }}</th>
-        <th>{{ $t('modelManagement.npmPackage') }}</th>
-        <th>{{ $t('modelManagement.providerOptions') }}</th>
+          <th>{{ $t('modelManagement.npmPackage') }}</th>
+          <th>{{ $t('modelManagement.builtin') }}</th>
+          <th>{{ $t('modelManagement.providerOptions') }}</th>
         <th>{{ $t('modelManagement.modelCount') }}</th>
         <th>{{ $t('modelManagement.actions') }}</th>
       </tr>
@@ -30,7 +32,7 @@
         <tbody>
     <!-- Loading State -->
     <tr v-if="loading">
-      <td colspan="6">
+      <td colspan="7">
               <div class="loading-placeholder">
                 <el-icon class="is-loading" :size="20"><Loading /></el-icon>
                 <span>{{ $t('modelManagement.loading') }}</span>
@@ -39,7 +41,7 @@
           </tr>
     <!-- Error State -->
     <tr v-else-if="loadError">
-      <td colspan="6">
+      <td colspan="7">
               <div class="error-placeholder">
                 <p>{{ $t('modelManagement.loadFailed') }}</p>
                 <button class="retry-btn" @click="fetchModels">{{ $t('modelManagement.retry') }}</button>
@@ -48,7 +50,7 @@
           </tr>
     <!-- Empty State -->
     <tr v-else-if="providers.length === 0">
-      <td colspan="6">
+      <td colspan="7">
               <div class="empty-placeholder">
                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
                 <p>{{ $t('modelManagement.noProviders') }}</p>
@@ -75,6 +77,11 @@
         <td>
           <span v-if="provider.npm" class="npm-badge">{{ provider.npm }}</span>
           <span v-else class="npm-empty">-</span>
+        </td>
+        <td>
+          <span :class="provider.builtin ? 'builtin-badge yes' : 'builtin-badge no'">
+            {{ provider.builtin ? $t('modelManagement.yes') : $t('modelManagement.no') }}
+          </span>
         </td>
               <td>
                 <span class="options-summary">{{ formatOptionsSummary(provider.options) }}</span>
@@ -107,7 +114,7 @@
             <!-- Model Sub-Rows -->
             <tr v-if="expandedProvider === provider.id" class="sub-row-header">
       <td></td>
-      <td colspan="5">
+      <td colspan="6">
                 <div class="sub-table-wrapper">
                   <table v-if="provider.models.length > 0" class="sub-table">
                     <thead>
@@ -176,6 +183,12 @@
         clearable
       />
     </el-form-item>
+    <el-form-item class="inline-form-item">
+      <template #label>
+        <span>{{ $t('modelManagement.builtin') }}</span>
+      </template>
+      <el-switch v-model="addProviderForm.builtin" />
+    </el-form-item>
     <el-form-item :label="$t('modelManagement.providerOptions')">
         <div class="options-editor">
           <div v-for="(opt, idx) in addProviderForm.options" :key="idx" class="option-row">
@@ -214,9 +227,15 @@
         clearable
       />
     </el-form-item>
+    <el-form-item class="inline-form-item">
+      <template #label>
+        <span>{{ $t('modelManagement.builtin') }}</span>
+      </template>
+      <el-switch v-model="updateProviderForm.builtin" />
+    </el-form-item>
     <el-form-item :label="$t('modelManagement.providerOptions')">
-        <div class="options-editor">
-          <div v-for="(opt, idx) in updateProviderForm.options" :key="idx" class="option-row">
+      <div class="options-editor">
+        <div v-for="(opt, idx) in updateProviderForm.options" :key="idx" class="option-row">
             <el-input :placeholder="$t('modelManagement.optionKey')" v-model="opt.key" class="option-key" :disabled="opt.key === 'name'" />
             <el-input :placeholder="$t('modelManagement.optionValue')" v-model="opt.value" class="option-value" />
             <button type="button" class="option-remove" @click="updateProviderForm.options.splice(idx, 1)" :disabled="opt.key === 'name'">
@@ -246,6 +265,10 @@
     <div class="detail-row">
       <span class="detail-label">{{ $t('modelManagement.npmPackage') }}</span>
       <span class="detail-value">{{ providerDetailTarget.npm || '-' }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">{{ $t('modelManagement.builtin') }}</span>
+      <span class="detail-value">{{ providerDetailTarget.builtin ? $t('modelManagement.yes') : $t('modelManagement.no') }}</span>
     </div>
     <div class="detail-divider">{{ $t('modelManagement.providerOptions') }}</div>
       <div v-if="providerDetailTarget.options.length > 0">
@@ -381,9 +404,26 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { modelApi, setConfig as setExtensionConfig, setAuthToken } from '../../apis/extension/api'
 import type { Model, Options } from '../../apis/extension/types/model'
 import { useUserStore } from '../../store/userStore'
+import { useRestartAlertStore } from '../../store/restartAlertStore'
 
 const { t: $t } = useI18n()
 const userStore = useUserStore()
+const restartAlertStore = useRestartAlertStore()
+
+const confirmAndMarkModelChanged = async () => {
+  if (!restartAlertStore.modelChanged) {
+    try {
+      await ElMessageBox.alert(
+        $t('restartAlert.confirmMessage'),
+        $t('restartAlert.confirmTitle'),
+        { confirmButtonText: $t('restartAlert.confirmOk'), type: 'warning' },
+      )
+    } catch {
+      // user closed dialog, still mark
+    }
+  }
+  restartAlertStore.markModelChanged()
+}
 
 const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001/api/'
 
@@ -397,6 +437,7 @@ interface ProviderItem {
   id: string
   provider_id: string
   npm?: string
+  builtin?: boolean
   options: Options[]
   models: Model[]
 }
@@ -418,6 +459,7 @@ const fetchModels = async () => {
       id: item.provider.id,
       provider_id: item.provider.provider_id,
       npm: item.provider.npm || '',
+      builtin: item.provider.builtin || false,
       options: item.provider.options || [],
       models: item.models || [],
     }))
@@ -485,10 +527,10 @@ const getProviderModels = (providerId: string): Model[] => {
 
 // ===== Add Provider =====
 const showAddProviderDialog = ref(false)
-const addProviderForm = ref({ providerId: '', npm: '', options: [] as Options[] })
+const addProviderForm = ref({ providerId: '', npm: '', builtin: false, options: [] as Options[] })
 
 const openAddProviderDialog = () => {
-  addProviderForm.value = { providerId: '', npm: '', options: [{ key: 'name', value: '' }] }
+  addProviderForm.value = { providerId: '', npm: '', builtin: false, options: [{ key: 'name', value: '' }] }
   showAddProviderDialog.value = true
 }
 
@@ -504,14 +546,12 @@ const handleAddProvider = async () => {
     const resp = await modelApi.addProvider({
       id: addProviderForm.value.providerId.trim(),
       npm: addProviderForm.value.npm.trim() || undefined,
+      builtin: addProviderForm.value.builtin || undefined,
       options: opts,
     })
-    if (resp.code === 0) {
-    showAddProviderDialog.value = false
-        ElMessageBox.alert($t('modelManagement.restartRequiredMessage'), $t('modelManagement.restartRequiredTitle'), {
-          confirmButtonText: $t('modelManagement.restartRequiredConfirm'),
-          type: 'warning',
-        })
+if (resp.code === 0) {
+      showAddProviderDialog.value = false
+      await confirmAndMarkModelChanged()
       await fetchModels()
     } else {
       ElMessage.error(resp.message || $t('modelManagement.addFailed'))
@@ -527,11 +567,11 @@ const handleAddProvider = async () => {
 // ===== Update Provider =====
 const showUpdateProviderDialog = ref(false)
 const updateProviderTarget = ref<ProviderItem | null>(null)
-const updateProviderForm = ref({ npm: '', options: [] as Options[] })
+const updateProviderForm = ref({ npm: '', builtin: false, options: [] as Options[] })
 
 const openUpdateProviderDialog = (provider: ProviderItem) => {
   updateProviderTarget.value = provider
-  updateProviderForm.value = { npm: provider.npm || '', options: provider.options.map(o => ({ ...o })) }
+  updateProviderForm.value = { npm: provider.npm || '', builtin: provider.builtin || false, options: provider.options.map(o => ({ ...o })) }
   if (updateProviderForm.value.options.length === 0) {
     updateProviderForm.value.options.push({ key: '', value: '' })
   }
@@ -547,14 +587,12 @@ const handleUpdateProvider = async () => {
     const resp = await modelApi.updateProvider({
       id: updateProviderTarget.value.id,
       npm: updateProviderForm.value.npm.trim() || undefined,
+      builtin: updateProviderForm.value.builtin,
       options: opts,
     })
-    if (resp.code === 0) {
-    showUpdateProviderDialog.value = false
-        ElMessageBox.alert($t('modelManagement.restartRequiredMessage'), $t('modelManagement.restartRequiredTitle'), {
-          confirmButtonText: $t('modelManagement.restartRequiredConfirm'),
-          type: 'warning',
-        })
+if (resp.code === 0) {
+      showUpdateProviderDialog.value = false
+      await confirmAndMarkModelChanged()
       await fetchModels()
     } else {
       ElMessage.error(resp.message || $t('modelManagement.updateFailed'))
@@ -602,12 +640,9 @@ const handleAddModel = async () => {
       id: addModelForm.value.modelId.trim(),
       options: opts,
     })
-    if (resp.code === 0) {
-    showAddModelDialog.value = false
-        ElMessageBox.alert($t('modelManagement.restartRequiredMessage'), $t('modelManagement.restartRequiredTitle'), {
-          confirmButtonText: $t('modelManagement.restartRequiredConfirm'),
-          type: 'warning',
-        })
+if (resp.code === 0) {
+      showAddModelDialog.value = false
+      await confirmAndMarkModelChanged()
       await fetchModels()
     } else {
       ElMessage.error(resp.message || $t('modelManagement.addFailed'))
@@ -647,12 +682,9 @@ const handleUpdateModel = async () => {
       provider_id: updateModelTargetProviderId.value,
       options: opts,
     })
-    if (resp.code === 0) {
-    showUpdateModelDialog.value = false
-        ElMessageBox.alert($t('modelManagement.restartRequiredMessage'), $t('modelManagement.restartRequiredTitle'), {
-          confirmButtonText: $t('modelManagement.restartRequiredConfirm'),
-          type: 'warning',
-        })
+if (resp.code === 0) {
+      showUpdateModelDialog.value = false
+      await confirmAndMarkModelChanged()
       await fetchModels()
     } else {
       ElMessage.error(resp.message || $t('modelManagement.updateFailed'))
@@ -689,12 +721,9 @@ const handleDeleteProvider = async () => {
   try {
     ensureExtensionConfig()
     const resp = await modelApi.deleteProvider({ id: deleteProviderTarget.value.id })
-    if (resp.code === 0) {
-    showDeleteProviderDialog.value = false
-        ElMessageBox.alert($t('modelManagement.restartRequiredMessage'), $t('modelManagement.restartRequiredTitle'), {
-          confirmButtonText: $t('modelManagement.restartRequiredConfirm'),
-          type: 'warning',
-        })
+if (resp.code === 0) {
+      showDeleteProviderDialog.value = false
+      await confirmAndMarkModelChanged()
       if (expandedProvider.value === deleteProviderTarget.value.id) {
         expandedProvider.value = null
       }
@@ -730,12 +759,9 @@ const handleDeleteModel = async () => {
       id: deleteModelTarget.value.id,
       provider_id: deleteModelTargetProviderId.value,
     })
-    if (resp.code === 0) {
-    showDeleteModelDialog.value = false
-        ElMessageBox.alert($t('modelManagement.restartRequiredMessage'), $t('modelManagement.restartRequiredTitle'), {
-          confirmButtonText: $t('modelManagement.restartRequiredConfirm'),
-          type: 'warning',
-        })
+if (resp.code === 0) {
+      showDeleteModelDialog.value = false
+      await confirmAndMarkModelChanged()
       await fetchModels()
     } else {
       ElMessage.error(resp.message || $t('modelManagement.deleteFailed'))
@@ -777,6 +803,13 @@ const handleDeleteModel = async () => {
   font-weight: 600;
   color: var(--text-100);
   margin: 0;
+}
+
+.restart-alert {
+  margin-left: 96px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #dc2626;
 }
 
 .table-header-right {
@@ -896,6 +929,23 @@ const handleDeleteModel = async () => {
 }
 
 .npm-empty {
+  color: var(--text-400);
+}
+
+.builtin-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.builtin-badge.yes {
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+}
+
+.builtin-badge.no {
   color: var(--text-400);
 }
 
@@ -1249,6 +1299,23 @@ const handleDeleteModel = async () => {
 /* ===== Dialog ===== */
 .dialog-form {
   padding-top: 4px;
+}
+
+.dialog-form .inline-form-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.dialog-form .inline-form-item :deep(.el-form-item__label) {
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.dialog-form .inline-form-item :deep(.el-form-item__content) {
+  flex: 0 0 auto;
 }
 
 .delete-msg {

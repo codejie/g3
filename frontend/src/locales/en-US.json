@@ -174,6 +174,9 @@
     "addModel": "Add Model",
     "providerId": "Provider ID",
     "npmPackage": "NPM/Adapter",
+    "builtin": "Built-in",
+    "yes": "Yes",
+    "no": "No",
     "providerName": "Provider Name",
     "providerOptions": "Provider Options",
     "modelName": "Model Name",
@@ -342,5 +345,11 @@
     "restarting": "Restarting…",
     "restartSuccess": "Restart command sent",
     "restartFailed": "Failed to restart"
+  },
+  "restartAlert": {
+    "message": "Configuration changed, restart OpenCode to take effect",
+    "confirmTitle": "Restart Required",
+    "confirmMessage": "Configuration changes require restarting OpenCode to take effect. You can restart later from the OpenCode Config page.",
+    "confirmOk": "OK"
   }
 }

@@ -32,6 +32,7 @@ const addProviderSchema = {
       requestId: { type: 'string' },
       id: { type: 'string', description: 'Provider ID string (e.g. openai, azure, anthropic)' },
       npm: { type: 'string', description: 'NPM package name for the provider adapter' },
+      builtin: { type: 'boolean', description: 'Whether this is a built-in provider', default: false },
       options: {
         type: 'array',
         items: {
@@ -111,6 +112,7 @@ const updateProviderSchema = {
       requestId: { type: 'string' },
       id: { type: 'string', description: 'Provider ID' },
       npm: { type: 'string', description: 'NPM package name for the provider adapter' },
+      builtin: { type: 'boolean', description: 'Whether this is a built-in provider' },
       options: {
         type: 'array',
         items: {

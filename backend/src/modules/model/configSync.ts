@@ -53,6 +53,9 @@ function buildProviderObject(): Record<string, any> {
   const result: Record<string, any> = {};
 
   for (const providerRow of providers) {
+    // Skip builtin providers - they should not be submitted to config
+    if (providerRow.builtin === 1) continue;
+
     const providerOpts = modelModel.getProviderOptions(providerRow.id);
     const models = modelModel.listModels(providerRow.id);
 

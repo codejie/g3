@@ -81,9 +81,11 @@ import { useI18n } from 'vue-i18n'
 import { fileApi, setConfig as setExtensionConfig, setAuthToken } from '../../apis/extension/api'
 import { systemApi } from '../../apis/extension/api'
 import { useUserStore } from '../../store/userStore'
+import { useRestartAlertStore } from '../../store/restartAlertStore'
 
 const { t: $t } = useI18n()
 const userStore = useUserStore()
+const restartAlertStore = useRestartAlertStore()
 
 const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001/api/'
 
@@ -219,6 +221,7 @@ const restartOpencode = async () => {
   try {
     const res = await systemApi.executeScript({ name: 'restart_opencode' })
     if (res.code === 0) {
+      restartAlertStore.clearAll()
       ElMessage.success($t('opencodeConfig.restartSuccess'))
     } else {
       ElMessage.error(res.message || $t('opencodeConfig.restartFailed'))

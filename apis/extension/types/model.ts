@@ -11,6 +11,7 @@ export interface Provider {
   id: string
   provider_id: string
   npm?: string
+  builtin?: boolean
   options: Options[]
 }
 
@@ -25,6 +26,7 @@ export interface ProviderRow {
   id: string
   provider_id: string
   npm: string | null
+  builtin: number
   disabled: number
   created_at: number
   updated_at: number
@@ -71,6 +73,7 @@ export type GetModelsResponse = BaseResponse<GetModelsResult>
 export interface AddProviderRequest extends BaseRequest {
   id: string
   npm?: string
+  builtin?: boolean
   options: Options[]
 }
 
@@ -118,6 +121,7 @@ export type DeleteProviderResponse = BaseResponse<void>
 export interface UpdateProviderRequest extends BaseRequest {
   id: string
   npm?: string
+  builtin?: boolean
   options?: Options[]
 }
 

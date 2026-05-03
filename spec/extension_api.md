@@ -180,6 +180,7 @@ interface ChangePasswordRequest extends BaseRequest {
   - id: 提供者ID，唯一标识符
   - provider_id: 提供者ID，字符串类型，如openai、azure、anthropic等
   - npm: 提供者npm包名，字符串类型，如openai、azure、anthropic等, default is NULL
+  - builtin: 是否为内置供应商，int类型，default为0，表示不是内置供应商
   - disabled: 提供者是否禁用，int类型（0表示启用，1表示禁用）,default为0
   - created: 提供者创建时间，日期时间类型
   - updated: 提供者更新时间，日期时间类型
@@ -233,6 +234,7 @@ interface GetModelsResult {
 interface AddProviderRequest extends BaseRequest {
   id: string; // 提供者ID/privider_id字符串，如openai、azure、anthropic等
   npm?: string; // 提供者npm包名，如openai、azure、anthropic等, default is NULL
+  builtin?: boolean; // 是否为内置供应商，default为false
   options: Options[]; // 提供者选项列表，如name, api_key, endpoint_url, region等
 }
 ```

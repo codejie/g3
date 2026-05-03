@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS providers (
   id TEXT PRIMARY KEY,
   provider_id TEXT UNIQUE NOT NULL,
   npm TEXT DEFAULT NULL,
+  builtin INTEGER DEFAULT 0,
   disabled INTEGER DEFAULT 0,
   created_at INTEGER DEFAULT (strftime('%s', 'now')),
   updated_at INTEGER DEFAULT (strftime('%s', 'now'))
@@ -183,20 +184,20 @@ VALUES
 ('${adminUserId}', 'admin', '${hashedPassword}', 'admin', 0, '${adminProfileId}', ${currentTime}, ${currentTime}),
 ('${testerUserId}', 'tester', '${hashedPassword}', 'user', 0, '${testerProfileId}', ${currentTime}, ${currentTime});
 
-INSERT OR IGNORE INTO providers (id, provider_id, npm, disabled, created_at, updated_at)
+INSERT OR IGNORE INTO providers (id, provider_id, npm, builtin, disabled, created_at, updated_at)
 VALUES
-  ('${ollamaProviderId}', 'ollama', 'ollama-ai-provider', 0, ${currentTime}, ${currentTime}),
-  ('${nvidiaProviderId}', 'nvidia', NULL, 0, ${currentTime}, ${currentTime}),
-  ('${deepseekProviderId}', 'deepseek', '@ai-sdk/openai-compatible', 0, ${currentTime}, ${currentTime});
+  ('${ollamaProviderId}', 'ollama', 'ollama-ai-provider', 0, 0, ${currentTime}, ${currentTime}),
+  ('${nvidiaProviderId}', 'nvidia', NULL, 1, 0, ${currentTime}, ${currentTime}),
+  ('${deepseekProviderId}', 'deepseek', '@ai-sdk/openai-compatible', 0, 0, ${currentTime}, ${currentTime});
 
 INSERT OR IGNORE INTO provider_options (id, provider_id, key, value)
 VALUES
 ('${deterministicOptionUUID('ollama', 'name')}', '${ollamaProviderId}', 'name', 'Ollama'),
-('${deterministicOptionUUID('ollama', 'endpoint_url')}', '${ollamaProviderId}', 'endpoint_url', 'http://localhost:11434'),
+('${deterministicOptionUUID('ollama', 'baseURL')}', '${ollamaProviderId}', 'baseURL', 'http://localhost:11434'),
 ('${deterministicOptionUUID('nvidia', 'name')}', '${nvidiaProviderId}', 'name', 'NVIDIA Builder'),
-('${deterministicOptionUUID('nvidia', 'endpoint_url')}', '${nvidiaProviderId}', 'endpoint_url', 'https://build.nvidia.ai'),
+('${deterministicOptionUUID('nvidia', 'baseURL')}', '${nvidiaProviderId}', 'baseURL', 'https://build.nvidia.ai'),
 ('${deterministicOptionUUID('deepseek', 'name')}', '${deepseekProviderId}', 'name', 'DeepSeek'),
-('${deterministicOptionUUID('deepseek', 'endpoint_url')}', '${deepseekProviderId}', 'endpoint_url', 'https://api.deepseek.com');
+('${deterministicOptionUUID('deepseek', 'baseURL')}', '${deepseekProviderId}', 'baseURL', 'https://api.deepseek.com');
 
 INSERT OR IGNORE INTO models (id, provider_id, model_id, disabled, created_at, updated_at)
 VALUES
