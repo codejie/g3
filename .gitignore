@@ -7,3 +7,4 @@ g2
 backend/data
 spec/opencode.json
 spec/config.json
+*.tar.gz
