@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { executeScriptHandler } from './handler';
-import { authenticateAdmin } from '../../middleware/auth';
+import { executeScriptHandler } from './handler.js';
+import { authenticateAdmin } from '../../middleware/auth.js';
 
 const executeScriptSchema = {
   description: 'Execute a system script',

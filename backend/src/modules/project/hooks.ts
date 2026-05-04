@@ -1,4 +1,4 @@
-import opencodeApi from '../../apis/opencode/api/request';
+import opencodeApi from '../../apis/opencode/api/request.js';
 const { sessionApi, configApi, setConfig } = opencodeApi;
 import type { Project } from '../../apis/extension/types/project';
 

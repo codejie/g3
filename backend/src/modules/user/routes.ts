@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { loginHandler, registerHandler, logoutHandler, profileHandler, listUsersHandler, deleteUserHandler, changePasswordHandler } from './handler';
-import { authenticateUser, authenticateAdmin } from '../../middleware/auth';
+import { loginHandler, registerHandler, logoutHandler, profileHandler, listUsersHandler, deleteUserHandler, changePasswordHandler } from './handler.js';
+import { authenticateUser, authenticateAdmin } from '../../middleware/auth.js';
 
 const loginSchema = {
   description: 'User login',

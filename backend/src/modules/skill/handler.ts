@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { createReadStream, unlinkSync } from 'fs';
-import { deploySkillPackage, packSkillDirectory, removeSkill, resolveSkillPath } from './model';
+import { deploySkillPackage, packSkillDirectory, removeSkill, resolveSkillPath } from './model.js';
 
 const RESPONSE_CODES = {
   SUCCESS: 0,

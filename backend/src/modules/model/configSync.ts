@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { resolve } from 'path';
-import modelModel from './model';
+import modelModel from './model.js';
 
 const OPENCODE_CONFIG_DIR = process.env.VITE_OPENCODE_CONFIG_PATH
   ? resolve(process.env.VITE_OPENCODE_CONFIG_PATH.replace(/^~/, process.env.HOME || ''))

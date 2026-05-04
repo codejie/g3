@@ -7,8 +7,8 @@ import {
   updateProjectHandler,
   setProjectStatusHandler,
   resetProjectSessionHandler,
-} from './handler';
-import { authenticateUser } from '../../middleware/auth';
+} from './handler.js';
+import { authenticateUser } from '../../middleware/auth.js';
 
 const createProjectSchema = {
   description: 'Create a project',

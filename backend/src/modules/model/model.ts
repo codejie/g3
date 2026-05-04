@@ -1,4 +1,4 @@
-import db from '../../utils/db';
+import db from '../../utils/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { ProviderRow, ModelRow, ProviderOptionRow, ModelOptionRow, Options } from '../../apis/extension/types/model';
 

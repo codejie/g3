@@ -1,1 +1,1 @@
-export { default as db } from './schema'
+export { default as db } from './schema.js'

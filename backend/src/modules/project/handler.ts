@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import projectModel, { ProjectRow } from './model';
+import projectModel, { ProjectRow } from './model.js';
 import type {
   CreateProjectRequest,
   GetProjectDetailRequest,
@@ -8,12 +8,12 @@ import type {
   ResetProjectSessionRequest,
   Project,
 } from '../../apis/extension/types/project';
-import opencodeApi from '../../apis/opencode/api/request';
+import opencodeApi from '../../apis/opencode/api/request.js';
 const { sessionApi, setConfig } = opencodeApi;
-import { ensureWorkspace } from '../file/model';
+import { ensureWorkspace } from '../file/model.js';
 import { resolve } from 'path';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
-import { onProjectActivate } from './hooks';
+import { onProjectActivate } from './hooks.js';
 
 const WORKSPACE_ROOT = process.env.VITE_WORKSPACE_ROOT || resolve(process.cwd(), 'data/workspace');
 

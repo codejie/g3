@@ -1,10 +1,10 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import userModel from './model';
+import userModel from './model.js';
 import { v4 as uuidv4 } from 'uuid';
-import db from '../../utils/db';
+import db from '../../utils/db.js';
 import { createHash } from 'crypto';
 import type { LoginRequest, RegisterRequest, ProfileRequest, Profile } from '../../apis/extension/types/user';
-import { createToken, saveToken, deleteToken } from '../../middleware/auth';
+import { createToken, saveToken, deleteToken } from '../../middleware/auth.js';
 
 const RESPONSE_CODES = {
   SUCCESS: 0,

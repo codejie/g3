@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { uploadSkillHandler, downloadSkillHandler, deleteSkillHandler } from './handler';
-import { authenticateAdmin } from '../../middleware/auth';
+import { uploadSkillHandler, downloadSkillHandler, deleteSkillHandler } from './handler.js';
+import { authenticateAdmin } from '../../middleware/auth.js';
 
 const downloadSkillSchema = {
   description: 'Download a skill package',

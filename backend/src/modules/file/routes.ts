@@ -9,8 +9,8 @@ import {
   saveOpencodeConfigHandler,
   downloadOpencodeConfigHandler,
   uploadOpencodeConfigHandler,
-} from './handler';
-import { authenticateUser, authenticateAdmin } from '../../middleware/auth';
+} from './handler.js';
+import { authenticateUser, authenticateAdmin } from '../../middleware/auth.js';
 
 const getFilesSchema = {
   description: 'List files in project',

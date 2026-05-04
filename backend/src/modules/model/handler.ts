@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import db from '../../utils/db';
-import modelModel from './model';
-import { syncConfigProvider } from './configSync';
+import db from '../../utils/db.js';
+import modelModel from './model.js';
+import { syncConfigProvider } from './configSync.js';
 import type {
   GetModelsRequest,
   AddProviderRequest,

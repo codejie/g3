@@ -1,10 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { readFile } from 'fs/promises';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { resolve } from 'path';
 
 const fastify = Fastify({
   logger: true
@@ -17,7 +14,7 @@ await fastify.register(cors, {
 });
 
 async function loadEnv() {
-  const envPath = resolve(__dirname, '.env');
+  const envPath = resolve(process.cwd(), '.env');
   const envContent = await readFile(envPath, 'utf-8');
   envContent.split('\n').forEach(line => {
     const [key, value] = line.split('=');

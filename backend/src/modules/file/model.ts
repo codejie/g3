@@ -1,10 +1,7 @@
 import { resolve, join, dirname, basename, extname } from 'path';
-import { mkdirSync, existsSync, statSync, readdirSync, unlinkSync, rmdirSync, createReadStream, createWriteStream, readFileSync, writeFileSync } from 'fs';
-import { mkdir, rm, stat, readdir, unlink, rmdir } from 'fs/promises';
-import { createHash } from 'crypto';
-import db from '../../utils/db';
-import { v4 as uuidv4 } from 'uuid';
-import { getProjectWorkspacePath } from '../project/handler';
+import { mkdirSync, existsSync, statSync, readdirSync, createReadStream, readFileSync, writeFileSync } from 'fs';
+import { rm, unlink } from 'fs/promises';
+import { getProjectWorkspacePath } from '../project/handler.js';
 
 const OPENCODE_CONFIG_DIR = process.env.VITE_OPENCODE_CONFIG_PATH
   ? resolve(process.env.VITE_OPENCODE_CONFIG_PATH.replace(/^~/, process.env.HOME || ''))

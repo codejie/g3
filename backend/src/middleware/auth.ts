@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
-import db from '../utils/db';
+import db from '../utils/db.js';
 
 export type AuthMode = 'none' | 'user' | 'admin' | 'any';
 

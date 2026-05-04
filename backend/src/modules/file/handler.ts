@@ -1,10 +1,11 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { listFiles, deleteFile, downloadFile, uploadFile, getFilePath, ensureWorkspace, readFileContent, readOpencodeConfig, saveOpencodeConfig, downloadOpencodeConfig } from './model';
+import type { MultipartValue } from '@fastify/multipart';
+import { listFiles, deleteFile, downloadFile, uploadFile, getFilePath, ensureWorkspace, readFileContent, readOpencodeConfig, saveOpencodeConfig, downloadOpencodeConfig } from './model.js';
 import { existsSync, statSync, readdirSync } from 'fs';
 import type { GetFilesRequest, DeleteFileRequest, DownloadFileRequest } from '../../apis/extension/types/file';
 import { unlink } from 'fs/promises';
 import { resolve, basename } from 'path';
-import { getProjectWorkspacePath } from '../project/handler';
+import { getProjectWorkspacePath } from '../project/handler.js';
 
 const RESPONSE_CODES = {
   SUCCESS: 0,
@@ -183,8 +184,8 @@ export async function uploadFileHandler(request: FastifyRequest, reply: FastifyR
     });
   }
 
-  const projectId = data.fields['project_id']?.value as string;
-  const path = data.fields['path']?.value as string;
+const projectId = (data.fields['project_id'] as MultipartValue<string> | undefined)?.value;
+const path = (data.fields['path'] as MultipartValue<string> | undefined)?.value;
 
   if (!projectId || !path) {
     return reply.send({
@@ -268,7 +269,7 @@ export async function uploadOpencodeConfigHandler(request: FastifyRequest, reply
     return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'No file uploaded' });
   }
 
-  const name = (data.fields['name']?.value as string) || 'opencode.json';
+  const name = ((data.fields['name'] as MultipartValue<string> | undefined)?.value as string) || 'opencode.json';
 
   if (!name.endsWith('.json')) {
     return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'Only .json config files are supported' });

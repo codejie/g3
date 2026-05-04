@@ -7,8 +7,8 @@ import {
   deleteProviderHandler,
   updateProviderHandler,
   updateModelHandler,
-} from './handler';
-import { authenticateUser, authenticateAdmin } from '../../middleware/auth';
+} from './handler.js';
+import { authenticateUser, authenticateAdmin } from '../../middleware/auth.js';
 
 const getModelsSchema = {
   description: 'Get models list',

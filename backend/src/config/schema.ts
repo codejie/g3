@@ -1,10 +1,7 @@
 import Database from 'better-sqlite3'
-import { resolve, dirname } from 'path'
-import { fileURLToPath } from 'url'
+import { resolve } from 'path'
 import { mkdirSync } from 'fs'
 import { createHash } from 'crypto'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const dbPath = resolve(process.cwd(), process.env.VITE_DATABASE_FILE || './data/appgenius.db')
 const dbDir = resolve(dbPath, '..')
