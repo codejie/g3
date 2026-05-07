@@ -15,7 +15,12 @@ import { resolve } from 'path';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { onProjectActivate } from './hooks.js';
 
-const WORKSPACE_ROOT = process.env.VITE_WORKSPACE_ROOT || resolve(process.cwd(), 'data/workspace');
+let _workspaceRoot: string | null = null;
+function getWorkspaceRoot(): string {
+  if (_workspaceRoot) return _workspaceRoot;
+  _workspaceRoot = process.env.VITE_WORKSPACE_ROOT || resolve(process.cwd(), 'data/workspace');
+  return _workspaceRoot;
+}
 
 const RESPONSE_CODES = {
   SUCCESS: 0,
@@ -29,7 +34,7 @@ export function getProjectDirectory(userId: string, projectId: string): string {
 }
 
 export function getProjectWorkspacePath(userId: string, projectId: string): string {
-  return resolve(WORKSPACE_ROOT, userId, projectId);
+  return resolve(getWorkspaceRoot(), userId, projectId);
 }
 
 function writeProjectInfo(project: ProjectRow): void {
@@ -42,7 +47,7 @@ function writeProjectInfo(project: ProjectRow): void {
     name: project.name,
     type: project.type,
     description: project.description || '',
-    path: `${WORKSPACE_ROOT}/${project.user_id}/${project.id}/`,
+    path: `${getWorkspaceRoot()}/${project.user_id}/${project.id}/`,
   };
   const filePath = resolve(workspacePath, '.PROJECT.md');
   writeFileSync(filePath, JSON.stringify(info, null, 2), 'utf-8');

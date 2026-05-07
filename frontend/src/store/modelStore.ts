@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { modelApi, setConfig, setAuthToken } from '../apis/extension/api'
 import { useUserStore } from './userStore'
 import type { Provider, Model } from '../apis/extension/types/model'
+import { getEnv } from '../utils/runtimeEnv'
 
 export const useModelStore = defineStore('model', () => {
   const items = ref<{ provider: Provider; models: Model[] }[]>([])
@@ -55,7 +56,7 @@ export const useModelStore = defineStore('model', () => {
   const fetchModels = async () => {
     loading.value = true
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL
+      const backendUrl = getEnv('VITE_BACKEND_URL')
       if (backendUrl) setConfig({ baseURL: backendUrl })
 
       const userStore = useUserStore()

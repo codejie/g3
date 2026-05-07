@@ -55,6 +55,7 @@ import { useI18n } from 'vue-i18n'
 import { userApi, setConfig, setAuthToken } from '../../apis/extension/api'
 import { useUserStore } from '../../store/userStore'
 import { ElMessage } from 'element-plus'
+import { getEnv } from '../../utils/runtimeEnv'
 import type { Profile } from '../../apis/extension/types/user'
 
 const props = defineProps<{ modelValue: boolean }>()
@@ -67,7 +68,7 @@ const { t } = useI18n()
 const userStore = useUserStore()
 const router = useRouter()
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL
+const backendUrl = getEnv('VITE_BACKEND_URL')
 
 watch(() => props.modelValue, (val) => {
   visible.value = val

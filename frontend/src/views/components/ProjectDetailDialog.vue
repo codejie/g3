@@ -43,6 +43,7 @@ import { useI18n } from 'vue-i18n'
 import { projectApi, setConfig, setAuthToken } from '../../apis/extension/api'
 import { useUserStore } from '../../store/userStore'
 import { ElMessage } from 'element-plus'
+import { getEnv } from '../../utils/runtimeEnv'
 import type { Project } from '../../apis/extension/types/project'
 
 interface Props {
@@ -79,7 +80,7 @@ watch(() => props.modelValue, (val) => {
 });
 
 const initApi = () => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = getEnv('VITE_BACKEND_URL');
   if (backendUrl) setConfig({ baseURL: backendUrl });
   const token = userStore.token;
   if (token) setAuthToken(token);

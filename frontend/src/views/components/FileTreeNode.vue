@@ -88,6 +88,7 @@ import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { fileApi, setConfig as setExtConfig, setAuthToken } from '../../apis/extension/api';
 import { useUserStore } from '../../store/userStore';
+import { getEnv } from '../../utils/runtimeEnv';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import type { FileNode } from '../../apis/extension/types/file';
 
@@ -122,7 +123,7 @@ const currentPath = computed(() => {
 });
 
 const initExtApi = () => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = getEnv('VITE_BACKEND_URL');
   if (backendUrl) setExtConfig({ baseURL: backendUrl });
   const token = userStore.token;
   if (token) setAuthToken(token);

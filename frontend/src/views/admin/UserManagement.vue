@@ -210,11 +210,12 @@ import { ElMessage } from 'element-plus'
 import { userApi, setConfig as setExtensionConfig, setAuthToken } from '../../apis/extension/api'
 import type { UserItem } from '../../apis/extension/types/user'
 import { useUserStore } from '../../store/userStore'
+import { getEnv } from '../../utils/runtimeEnv'
 
 const { t: $t } = useI18n()
 const userStore = useUserStore()
 
-const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001/api/'
+const backendURL = getEnv('VITE_BACKEND_URL', 'http://127.0.0.1:3001/api/')!
 
 const ensureExtensionConfig = () => {
   setExtensionConfig({ baseURL: backendURL })

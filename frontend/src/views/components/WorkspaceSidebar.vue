@@ -153,6 +153,7 @@ import { ref, watch, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { fileApi, setConfig as setExtConfig, setAuthToken } from '../../apis/extension/api';
 import { useUserStore } from '../../store/userStore';
+import { getEnv } from '../../utils/runtimeEnv';
 import type { FileNode } from '../../apis/extension/types/file';
 import { renderMarkdown } from '../../utils/markdownUtils';
 import FileTreeNode from './FileTreeNode.vue';
@@ -226,7 +227,7 @@ const preview = reactive({
 });
 
 const initExtApi = () => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = getEnv('VITE_BACKEND_URL');
   if (backendUrl) setExtConfig({ baseURL: backendUrl });
   const token = userStore.token;
   if (token) setAuthToken(token);

@@ -149,6 +149,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { projectApi, userApi, setConfig, setAuthToken } from '../../apis/extension/api'
 import { useUserStore } from '../../store/userStore'
+import { getEnv } from '../../utils/runtimeEnv'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { setLocale, getLocale } from '../../locales'
 import type { Project } from '../../apis/extension/types/project'
@@ -202,7 +203,7 @@ const showDetailDialog = ref(false)
 const detailProject = ref<Project | null>(null)
 
 const initApi = () => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL
+  const backendUrl = getEnv('VITE_BACKEND_URL')
   if (backendUrl) setConfig({ baseURL: backendUrl })
   const token = userStore.token
   if (token) setAuthToken(token)

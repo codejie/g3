@@ -150,6 +150,7 @@ import type { Project } from '../apis/extension/types/project';
 import { projectApi, setConfig as setExtConfig, setAuthToken } from '../apis/extension/api';
 import { useModelStore } from '../store/modelStore';
 import { useUserStore } from '../store/userStore';
+import { getEnv } from '../utils/runtimeEnv';
 // import { fireMessageSubmit } from '../hooks/messageInteraction';
 
 const DEFAULT_PROVIDER_ID = 'nvidia';
@@ -169,12 +170,12 @@ const isWaitingForResponse = ref(false);
 const currentProjectId = ref<string | null>(null);
 const currentProject = ref<Project | null>(null);
 const currentDirectory = ref<string | null>(null);
-const agentMode = ref(import.meta.env.VITE_AGENT_BUILD || 'build-extended');
+const agentMode = ref(getEnv('VITE_AGENT_BUILD', 'build-extended'));
 
 let unsubscribeSSE: (() => void) | null = null;
 
 const initExtApi = () => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = getEnv('VITE_BACKEND_URL');
   if (backendUrl) setExtConfig({ baseURL: backendUrl });
   const token = userStore.token;
   if (token) setAuthToken(token);
@@ -288,7 +289,7 @@ const getProcessedParts = (msg: any) => {
 };
 
 const getOpenCodeURL = (): string => {
-  return import.meta.env.VITE_OPENCODE_URL || 'http://127.0.0.1:10090';
+  return getEnv('VITE_OPENCODE_URL', 'http://127.0.0.1:10090')!;
 };
 
 const handleModelSelect = (_providerId: string, _modelId: string) => {

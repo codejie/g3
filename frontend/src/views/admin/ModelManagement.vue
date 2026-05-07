@@ -405,6 +405,7 @@ import { modelApi, setConfig as setExtensionConfig, setAuthToken } from '../../a
 import type { Model, Options } from '../../apis/extension/types/model'
 import { useUserStore } from '../../store/userStore'
 import { useRestartAlertStore } from '../../store/restartAlertStore'
+import { getEnv } from '../../utils/runtimeEnv'
 
 const { t: $t } = useI18n()
 const userStore = useUserStore()
@@ -425,7 +426,7 @@ const confirmAndMarkModelChanged = async () => {
   restartAlertStore.markModelChanged()
 }
 
-const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001/api/'
+const backendURL = getEnv('VITE_BACKEND_URL', 'http://127.0.0.1:3001/api/')!
 
 const ensureExtensionConfig = () => {
   setExtensionConfig({ baseURL: backendURL })

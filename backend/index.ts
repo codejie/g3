@@ -17,10 +17,16 @@ async function loadEnv() {
   const envPath = resolve(process.cwd(), '.env');
   const envContent = await readFile(envPath, 'utf-8');
   envContent.split('\n').forEach(line => {
-    const [key, value] = line.split('=');
-    if (key && value) {
-      process.env[key.trim()] = value.trim();
+    line = line.trim();
+    if (!line || line.startsWith('#')) return;
+    const eq = line.indexOf('=');
+    if (eq === -1) return;
+    const key = line.substring(0, eq).trim();
+    let value = line.substring(eq + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
     }
+    process.env[key] = value;
   });
 
   if (!process.env.VITE_BACKEND_PORT) {

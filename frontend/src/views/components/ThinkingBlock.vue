@@ -17,13 +17,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { getEnv } from '../../utils/runtimeEnv';
 
 const props = defineProps<{
   text: string;
   streaming?: boolean;
 }>();
 
-const hideThinkingDelay = Number(import.meta.env.VITE_HIDE_THINKING);
+const hideThinkingDelay = Number(getEnv('VITE_HIDE_THINKING') || '0');
 const isCollapsed = ref(false);
 let collapseTimer: ReturnType<typeof setTimeout> | null = null;
 

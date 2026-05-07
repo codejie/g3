@@ -135,6 +135,7 @@ import { skillApi as opencodeSkillApi, setConfig as setOpencodeConfig } from '..
 import { skillApi, setConfig as setExtensionConfig, setAuthToken } from '../../apis/extension/api'
 import { useUserStore } from '../../store/userStore'
 import { useRestartAlertStore } from '../../store/restartAlertStore'
+import { getEnv } from '../../utils/runtimeEnv'
 import type { Skill } from '../../apis/opencode/types'
 
 const { t: $t } = useI18n()
@@ -156,7 +157,7 @@ const confirmAndMarkSkillChanged = async () => {
   restartAlertStore.markSkillChanged()
 }
 
-const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001/api/'
+const backendURL = getEnv('VITE_BACKEND_URL', 'http://127.0.0.1:3001/api/')!
 
 const ensureExtensionConfig = () => {
   setExtensionConfig({ baseURL: backendURL })
@@ -171,7 +172,7 @@ const fetchSkills = async () => {
   loading.value = true
   loadError.value = false
   try {
-    const baseURL = import.meta.env.VITE_OPENCODE_URL || 'http://127.0.0.1:10090'
+    const baseURL = getEnv('VITE_OPENCODE_URL', 'http://127.0.0.1:10090')!
     setOpencodeConfig({ baseURL })
     skills.value = await opencodeSkillApi.list()
   } catch (error) {

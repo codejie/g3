@@ -1,4 +1,5 @@
 import type { EventCallbacks, ConnectionInfo, ConnectionState } from '../types';
+import { getEnv } from '../utils/runtimeEnv';
 
 let controller: AbortController | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -19,7 +20,7 @@ const connectionInfo: ConnectionInfo = {
 let currentCallbacks: EventCallbacks = {};
 
 function buildSSEURL(): string {
-  const baseURL = import.meta.env.VITE_OPENCODE_URL || 'http://127.0.0.1:10090';
+  const baseURL = getEnv('VITE_OPENCODE_URL', 'http://127.0.0.1:10090')!;
   return `${baseURL}/global/event`;
 }
 

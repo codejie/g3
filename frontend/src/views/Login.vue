@@ -75,8 +75,9 @@ import { User, Lock } from '@element-plus/icons-vue'
 import { userApi, setConfig } from '../apis/extension/api/userApi'
 import { useUserStore } from '../store/userStore'
 import { ElMessage } from 'element-plus'
+import { getEnv } from '../utils/runtimeEnv'
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL
+const backendUrl = getEnv('VITE_BACKEND_URL')
 if (!backendUrl) {
   throw new Error('VITE_BACKEND_URL is not configured in .env')
 }

@@ -8,6 +8,9 @@ import i18n from './locales';
 import './style.css';
 import { useUserStore } from './store/userStore';
 import { onAuthFailure } from './apis/extension/api/request';
+import { loadRuntimeConfig } from './utils/runtimeEnv';
+
+await loadRuntimeConfig();
 
 const pinia = createPinia();
 const app = createApp(App);

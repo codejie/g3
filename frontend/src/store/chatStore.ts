@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { getEnv } from '../utils/runtimeEnv';
 
 const STORAGE_KEY = 'appgenius_current_project_id';
 
@@ -18,7 +19,7 @@ export const useChatStore = defineStore('chat', () => {
   };
 
   const getOpenCodeURL = (): string => {
-    return import.meta.env.VITE_OPENCODE_URL || 'http://127.0.0.1:10090';
+    return getEnv('VITE_OPENCODE_URL', 'http://127.0.0.1:10090')!;
   };
 
   const saveCurrentProjectId = (projectId: string | null) => {

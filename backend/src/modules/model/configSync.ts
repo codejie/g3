@@ -2,14 +2,19 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { resolve } from 'path';
 import modelModel from './model.js';
 
-const OPENCODE_CONFIG_DIR = process.env.VITE_OPENCODE_CONFIG_PATH
-  ? resolve(process.env.VITE_OPENCODE_CONFIG_PATH.replace(/^~/, process.env.HOME || ''))
-  : resolve(process.env.HOME || '/root', '.config/opencode');
+let _opencodeConfigDir: string | null = null;
+function getOpencodeConfigDir(): string {
+  if (_opencodeConfigDir) return _opencodeConfigDir;
+  _opencodeConfigDir = process.env.VITE_OPENCODE_CONFIG_PATH
+    ? resolve(process.env.VITE_OPENCODE_CONFIG_PATH.replace(/^~/, process.env.HOME || ''))
+    : resolve(process.env.HOME || '/root', '.config/opencode');
+  return _opencodeConfigDir;
+}
 
 const CONFIG_FILE = 'config.json';
 
 function readConfigJson(): Record<string, any> {
-  const filePath = resolve(OPENCODE_CONFIG_DIR, CONFIG_FILE);
+  const filePath = resolve(getOpencodeConfigDir(), CONFIG_FILE);
   if (!existsSync(filePath)) {
     return {};
   }
@@ -22,9 +27,9 @@ function readConfigJson(): Record<string, any> {
 }
 
 function writeConfigJson(config: Record<string, any>): void {
-  const filePath = resolve(OPENCODE_CONFIG_DIR, CONFIG_FILE);
-  if (!existsSync(OPENCODE_CONFIG_DIR)) {
-    mkdirSync(OPENCODE_CONFIG_DIR, { recursive: true });
+  const filePath = resolve(getOpencodeConfigDir(), CONFIG_FILE);
+  if (!existsSync(getOpencodeConfigDir())) {
+    mkdirSync(getOpencodeConfigDir(), { recursive: true });
   }
   writeFileSync(filePath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
 }

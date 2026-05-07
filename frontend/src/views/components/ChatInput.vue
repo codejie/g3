@@ -101,6 +101,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { skillApi, setConfig } from '../../apis/opencode/api';
 import type { Skill } from '../../apis/opencode/types';
+import { getEnv } from '../../utils/runtimeEnv';
 
 interface Props {
   modelValue: string;
@@ -127,7 +128,7 @@ const skillsDropdownOpen = ref(false);
 const fetchSkills = async () => {
   skillsLoading.value = true;
   try {
-    const baseURL = import.meta.env.VITE_OPENCODE_URL || 'http://127.0.0.1:10090';
+    const baseURL = getEnv('VITE_OPENCODE_URL', 'http://127.0.0.1:10090')!;
     setConfig({ baseURL });
     skillsList.value = await skillApi.list();
   } catch (error) {
@@ -158,11 +159,11 @@ const handleSkillSelect = (skill: Skill) => {
 };
 
 const agentModes = [
-  { id: 'build', label: 'BUILD', agent: import.meta.env.VITE_AGENT_BUILD || 'build-extended' },
-  { id: 'plan', label: 'PLAN', agent: import.meta.env.VITE_AGENT_PLAN || 'plan-extended' }
+  { id: 'build', label: 'BUILD', agent: getEnv('VITE_AGENT_BUILD', 'build-extended')! },
+  { id: 'plan', label: 'PLAN', agent: getEnv('VITE_AGENT_PLAN', 'plan-extended')! }
 ];
 
-const initMode = import.meta.env.VITE_INIT_AGENT_MODE || 'build';
+const initMode = getEnv('VITE_INIT_AGENT_MODE', 'build')!;
 const currentMode = ref(initMode);
 const modeDropdownOpen = ref(false);
 

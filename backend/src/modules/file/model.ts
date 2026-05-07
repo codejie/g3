@@ -3,9 +3,14 @@ import { mkdirSync, existsSync, statSync, readdirSync, createReadStream, readFil
 import { rm, unlink } from 'fs/promises';
 import { getProjectWorkspacePath } from '../project/handler.js';
 
-const OPENCODE_CONFIG_DIR = process.env.VITE_OPENCODE_CONFIG_PATH
-  ? resolve(process.env.VITE_OPENCODE_CONFIG_PATH.replace(/^~/, process.env.HOME || ''))
-  : resolve(process.env.HOME || '/root', '.config/opencode');
+let _opencodeConfigDir: string | null = null;
+function getOpencodeConfigDir(): string {
+  if (_opencodeConfigDir) return _opencodeConfigDir;
+  _opencodeConfigDir = process.env.VITE_OPENCODE_CONFIG_PATH
+    ? resolve(process.env.VITE_OPENCODE_CONFIG_PATH.replace(/^~/, process.env.HOME || ''))
+    : resolve(process.env.HOME || '/root', '.config/opencode');
+  return _opencodeConfigDir;
+}
 
 const DEFAULT_OPENCODE_JSON = JSON.stringify({}, null, 2);
 const DEFAULT_CONFIG_JSON = JSON.stringify({}, null, 2);
@@ -188,8 +193,8 @@ export function readOpencodeConfig(name: string): { content: string; name: strin
     throw new Error(`Config file "${name}" is not allowed. Allowed: ${allowedNames.join(', ')}`);
   }
 
-  const filePath = resolve(OPENCODE_CONFIG_DIR, name);
-  if (!filePath.startsWith(OPENCODE_CONFIG_DIR)) {
+  const filePath = resolve(getOpencodeConfigDir(), name);
+  if (!filePath.startsWith(getOpencodeConfigDir())) {
     throw new Error('Path traversal detected');
   }
 
@@ -211,13 +216,13 @@ export function saveOpencodeConfig(name: string, content: string): void {
     throw new Error(`Config file "${name}" is not allowed. Allowed: ${allowedNames.join(', ')}`);
   }
 
-  const filePath = resolve(OPENCODE_CONFIG_DIR, name);
-  if (!filePath.startsWith(OPENCODE_CONFIG_DIR)) {
+  const filePath = resolve(getOpencodeConfigDir(), name);
+  if (!filePath.startsWith(getOpencodeConfigDir())) {
     throw new Error('Path traversal detected');
   }
 
-  if (!existsSync(OPENCODE_CONFIG_DIR)) {
-    mkdirSync(OPENCODE_CONFIG_DIR, { recursive: true });
+  if (!existsSync(getOpencodeConfigDir())) {
+    mkdirSync(getOpencodeConfigDir(), { recursive: true });
   }
 
   writeFileSync(filePath, content, 'utf-8');
@@ -232,8 +237,8 @@ export function downloadOpencodeConfig(name: string): { stream: NodeJS.ReadableS
     throw new Error(`Config file "${name}" is not allowed. Allowed: ${allowedNames.join(', ')}`);
   }
 
-  const filePath = resolve(OPENCODE_CONFIG_DIR, name);
-  if (!filePath.startsWith(OPENCODE_CONFIG_DIR)) {
+  const filePath = resolve(getOpencodeConfigDir(), name);
+  if (!filePath.startsWith(getOpencodeConfigDir())) {
     throw new Error('Path traversal detected');
   }
 

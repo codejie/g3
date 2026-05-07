@@ -82,12 +82,13 @@ import { fileApi, setConfig as setExtensionConfig, setAuthToken } from '../../ap
 import { systemApi } from '../../apis/extension/api'
 import { useUserStore } from '../../store/userStore'
 import { useRestartAlertStore } from '../../store/restartAlertStore'
+import { getEnv } from '../../utils/runtimeEnv'
 
 const { t: $t } = useI18n()
 const userStore = useUserStore()
 const restartAlertStore = useRestartAlertStore()
 
-const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:3001/api/'
+const backendURL = getEnv('VITE_BACKEND_URL', 'http://127.0.0.1:3001/api/')!
 
 const ensureExtensionConfig = () => {
   setExtensionConfig({ baseURL: backendURL })
