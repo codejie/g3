@@ -191,8 +191,6 @@ export async function activateProjectHandler(request: FastifyRequest, reply: Fas
     console.error(`[Project] Activate hook failed for project ${id}:`, error.message);
   }
 
-  console.log(`[Project] Activated — userId: ${userId}, projectId: ${id}, directory: ${directory}`);
-
   return reply.send({
     code: RESPONSE_CODES.SUCCESS,
     data: {

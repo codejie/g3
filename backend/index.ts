@@ -3,8 +3,10 @@ import cors from '@fastify/cors';
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const fastify = Fastify({
-  logger: true
+  logger: !isProduction
 });
 
 await fastify.register(cors, {

@@ -6,7 +6,7 @@ import type { ExecuteScriptRequest } from '../../apis/extension/types/system';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const SCRIPTS_DIR = resolve(__dirname, '../../../');
+const SCRIPTS_DIR = resolve(__dirname, '../../../../'); // backend root
 
 const ALLOWED_SCRIPTS: Record<string, string> = {
   restart_opencode: resolve(SCRIPTS_DIR, 'restart_opencode.sh'),

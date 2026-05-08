@@ -1,15 +1,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { resolve } from 'path';
 import modelModel from './model.js';
-
-let _opencodeConfigDir: string | null = null;
-function getOpencodeConfigDir(): string {
-  if (_opencodeConfigDir) return _opencodeConfigDir;
-  _opencodeConfigDir = process.env.VITE_OPENCODE_CONFIG_PATH
-    ? resolve(process.env.VITE_OPENCODE_CONFIG_PATH.replace(/^~/, process.env.HOME || ''))
-    : resolve(process.env.HOME || '/root', '.config/opencode');
-  return _opencodeConfigDir;
-}
+import { getOpencodeConfigDir } from '../../utils/logger.js';
 
 const CONFIG_FILE = 'config.json';
 

@@ -91,13 +91,11 @@ export const useMessageStore = defineStore('message', () => {
 
   const handlePartDelta = (payload: any) => {
     const { messageID, partID, field, delta } = payload;
-    console.log('[MessageStore] handlePartDelta — messageID:', messageID, 'partID:', partID, 'field:', field, 'delta:', delta?.slice(0, 50));
 
     let messageIndex = messages.value.findIndex(m => m.info?.id === messageID);
 
-    if (messageIndex === -1) {
-      console.log('[MessageStore] new assistant message created — messageID:', messageID);
-      const newMessage: Message = {
+  if (messageIndex === -1) {
+    const newMessage: Message = {
         info: {
           id: messageID,
           role: 'assistant',
@@ -134,14 +132,11 @@ export const useMessageStore = defineStore('message', () => {
       part.type = 'reasoning';
     }
 
-    if (part.type === 'text' || part.type === 'reasoning') {
-      part.text += (delta || '');
-      message.parts = [...message.parts];
-      messages.value[messageIndex] = { ...message };
-      console.log('[MessageStore] part updated — msgId:', messageID, 'partId:', partID, 'textLen:', part.text.length);
-    } else {
-      console.log('[MessageStore] part type skipped:', part.type);
-    }
+  if (part.type === 'text' || part.type === 'reasoning') {
+    part.text += (delta || '');
+    message.parts = [...message.parts];
+    messages.value[messageIndex] = { ...message };
+  }
   };
 
   const markReplyEnded = () => {

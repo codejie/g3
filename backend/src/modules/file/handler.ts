@@ -1,11 +1,10 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { MultipartValue } from '@fastify/multipart';
 import { listFiles, deleteFile, downloadFile, uploadFile, getFilePath, ensureWorkspace, readFileContent, readOpencodeConfig, saveOpencodeConfig, downloadOpencodeConfig } from './model.js';
-import { existsSync, statSync, readdirSync } from 'fs';
+import { statSync } from 'fs';
 import type { GetFilesRequest, DeleteFileRequest, DownloadFileRequest } from '../../apis/extension/types/file';
 import { unlink } from 'fs/promises';
 import { resolve, basename } from 'path';
-import { getProjectWorkspacePath } from '../project/handler.js';
 
 const RESPONSE_CODES = {
   SUCCESS: 0,
@@ -24,31 +23,10 @@ export async function getFilesHandler(request: FastifyRequest, reply: FastifyRep
     });
   }
 
-  const workspace = getProjectWorkspacePath(userId, project_id);
   await ensureWorkspace(userId, project_id);
-  const targetDir = path ? getFilePath(userId, project_id, path) : workspace;
-
-  console.log(`[File] getFiles — userId: ${userId}, projectId: ${project_id}, path: ${path || '(root)'}`);
-  console.log(`[File] workspace root: ${workspace}`);
-  console.log(`[File] target directory: ${targetDir}`);
-  console.log(`[File] target exists: ${existsSync(targetDir)}`);
-
-  if (existsSync(targetDir)) {
-    try {
-      const dirStat = statSync(targetDir);
-      console.log(`[File] target isDirectory: ${dirStat.isDirectory()}`);
-      if (dirStat.isDirectory()) {
-        const rawEntries = readdirSync(targetDir, { withFileTypes: true });
-        console.log(`[File] raw entries in directory: ${rawEntries.map(e => `${e.name}(${e.isDirectory() ? 'dir' : 'file'})`).join(', ') || '(empty)'}`);
-      }
-    } catch (e: any) {
-      console.log(`[File] stat/readdir error: ${e.message}`);
-    }
-  }
 
   try {
     const items = await listFiles(userId, project_id, path);
-    console.log(`[File] listFiles returned ${items.length} items: ${items.map(i => `${i.name}(${i.type})`).join(', ') || '(empty)'}`);
     return reply.send({
       code: RESPONSE_CODES.SUCCESS,
       data: { items },
@@ -279,7 +257,6 @@ export async function uploadOpencodeConfigHandler(request: FastifyRequest, reply
     const buffer = await data.toBuffer();
     const content = buffer.toString('utf-8');
     saveOpencodeConfig(name, content);
-    console.log(`[File] OpenCode config uploaded: ${name}`);
     return reply.send({ code: RESPONSE_CODES.SUCCESS });
   } catch (error: any) {
     return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: error.message });

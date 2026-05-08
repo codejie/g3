@@ -49,16 +49,13 @@ async function fireHooks(hooks: MessageHook[], ctx: MessageInteractionContext): 
 }
 
 export async function fireMessageSubmit(ctx: MessageInteractionContext): Promise<void> {
-  console.log('[Hook] fireMessageSubmit —', JSON.stringify(ctx));
   await fireHooks(onSubmitHooks, ctx);
 }
 
 export async function fireReplyStart(ctx: MessageInteractionContext): Promise<void> {
-  console.log('[Hook] fireReplyStart —', JSON.stringify(ctx));
   await fireHooks(onReplyStartHooks, ctx);
 }
 
 export async function fireReplyEnd(ctx: MessageInteractionContext): Promise<void> {
-  console.log('[Hook] fireReplyEnd —', JSON.stringify(ctx));
   await fireHooks(onReplyEndHooks, ctx);
 }

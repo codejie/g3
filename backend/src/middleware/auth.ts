@@ -36,12 +36,20 @@ interface UserInfo {
   role: string;
 }
 
-function findToken(token: string): any | null {
+interface TokenRow {
+  id: string;
+  user_id: string;
+  token: string;
+  expires_at: number;
+  role: string;
+}
+
+function findToken(token: string): TokenRow | null {
   const now = Math.floor(Date.now() / 1000);
   const stmt = db.prepare(
     'SELECT t.*, u.role FROM tokens t JOIN users u ON t.user_id = u.id WHERE t.token = ? AND t.expires_at > ?'
   );
-  return stmt.get(token, now) as any || null;
+  return stmt.get(token, now) as TokenRow | null;
 }
 
 function validateTokenForMode(token: string, mode: AuthMode): UserInfo | null {

@@ -64,6 +64,12 @@ export async function deploySkillPackage(
   const isTarGz = filename.endsWith('.tar.gz') || filename.endsWith('.tgz') || ext === '.gz';
   const isZip = ext === '.zip';
 
+  // Reject filenames with shell metacharacters to prevent command injection
+  if (/[;&|`$(){}!<>\\]/.test(filename)) {
+    await cleanup(stagingDir);
+    throw new Error('Invalid filename: contains disallowed characters');
+  }
+
   try {
     if (isTarGz) {
       execSync(`tar -xzf "${uploadedPath}" -C "${extractDir}"`, { cwd: extractDir });

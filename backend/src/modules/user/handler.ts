@@ -2,7 +2,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import userModel from './model.js';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../../utils/db.js';
-import { createHash } from 'crypto';
+import { hashPassword } from '../../config/schema.js';
 import type { LoginRequest, RegisterRequest, ProfileRequest, Profile } from '../../apis/extension/types/user';
 import { createToken, saveToken, deleteToken } from '../../middleware/auth.js';
 
@@ -15,10 +15,6 @@ const RESPONSE_CODES = {
   FORBIDDEN: -4,
   SERVER_ERROR: -7,
 };
-
-function hashPassword(password: string): string {
-  return createHash('sha256').update(password).digest('hex');
-}
 
 function verifyPassword(password: string, hash: string): boolean {
   return hashPassword(password) === hash;
@@ -287,7 +283,6 @@ export async function deleteUserHandler(request: FastifyRequest, reply: FastifyR
     db.prepare('DELETE FROM profiles WHERE id = ?').run(profileId);
   }
 
-  console.log(`[User] Deleted: ${user.username} (${id}), profile: ${profileId}`);
   return reply.send({ code: RESPONSE_CODES.SUCCESS });
 }
 
@@ -312,6 +307,5 @@ export async function changePasswordHandler(request: FastifyRequest, reply: Fast
   const deleteTokens = db.prepare('DELETE FROM tokens WHERE user_id = ?');
   deleteTokens.run(id);
 
-  console.log(`[User] Password changed for: ${user.username} (${id})`);
   return reply.send({ code: RESPONSE_CODES.SUCCESS });
 }

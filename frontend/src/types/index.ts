@@ -19,7 +19,7 @@ export interface GlobalEvent {
   type: string;
   payload: {
     type: string;
-    properties: any;
+    properties: Record<string, unknown>;
   };
 }
 

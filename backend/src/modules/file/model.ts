@@ -2,15 +2,7 @@ import { resolve, join, dirname, basename, extname } from 'path';
 import { mkdirSync, existsSync, statSync, readdirSync, createReadStream, readFileSync, writeFileSync } from 'fs';
 import { rm, unlink } from 'fs/promises';
 import { getProjectWorkspacePath } from '../project/handler.js';
-
-let _opencodeConfigDir: string | null = null;
-function getOpencodeConfigDir(): string {
-  if (_opencodeConfigDir) return _opencodeConfigDir;
-  _opencodeConfigDir = process.env.VITE_OPENCODE_CONFIG_PATH
-    ? resolve(process.env.VITE_OPENCODE_CONFIG_PATH.replace(/^~/, process.env.HOME || ''))
-    : resolve(process.env.HOME || '/root', '.config/opencode');
-  return _opencodeConfigDir;
-}
+import { getOpencodeConfigDir } from '../../utils/logger.js';
 
 const DEFAULT_OPENCODE_JSON = JSON.stringify({}, null, 2);
 const DEFAULT_CONFIG_JSON = JSON.stringify({}, null, 2);

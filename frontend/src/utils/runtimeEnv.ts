@@ -8,9 +8,10 @@ export async function loadRuntimeConfig(): Promise<void> {
   if (window.__APP_CONFIG__) return;
 
   try {
-    const resp = await fetch('.env');
+    const resp = await fetch('/.env');
     if (!resp.ok) return;
     const text = await resp.text();
+    if (!text || text.trimStart().startsWith('<')) return;
     const config: Record<string, string> = {};
     text.split('\n').forEach(line => {
       line = line.trim();
