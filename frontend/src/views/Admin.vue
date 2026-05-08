@@ -101,11 +101,16 @@
     <OpenCodeConfig />
   </div>
 
-  <!-- User Management Section -->
-  <div v-else-if="activeSection === 'users'" class="content-section">
-    <UserManagement />
-  </div>
-  </div>
+    <!-- Session Management Section -->
+      <div v-else-if="activeSection === 'sessions'" class="content-section">
+        <SessionManagement />
+      </div>
+
+      <!-- User Management Section -->
+      <div v-else-if="activeSection === 'users'" class="content-section">
+        <UserManagement />
+      </div>
+    </div>
     </main>
   </div>
 </template>
@@ -122,6 +127,7 @@ import ModelManagement from './admin/ModelManagement.vue';
 import UserManagement from './admin/UserManagement.vue';
 import SkillsManagement from './admin/SkillsManagement.vue';
 import OpenCodeConfig from './admin/OpenCodeConfig.vue';
+import SessionManagement from './admin/SessionManagement.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -135,6 +141,8 @@ const iconModels = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="1
 
 const iconSkills = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
 
+const iconSessions = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
+
 const iconOpenCode = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
 
 const iconUsers = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
@@ -144,6 +152,7 @@ const iconLogs = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
 const navItems = computed(() => [
   { key: 'models', label: t('admin.modelManagement'), icon: iconModels },
   { key: 'skills', label: t('admin.skillsManagement'), icon: iconSkills },
+  { key: 'sessions', label: t('admin.sessionManagement'), icon: iconSessions },
   { key: 'opencode-config', label: t('admin.opencodeConfig'), icon: iconOpenCode },
   { key: 'users', label: t('admin.userManagement'), icon: iconUsers },
   { key: 'logs', label: t('admin.logView'), icon: iconLogs, disabled: true },

@@ -71,6 +71,10 @@ const { default: systemRoutes } = await import('./src/modules/system/routes.js')
 fastify.register(systemRoutes);
 console.log('System routes loaded');
 
+const { default: sessionRoutes } = await import('./src/modules/session/routes.js');
+fastify.register(sessionRoutes);
+console.log('Session routes loaded');
+
 fastify.get('/', async () => {
   return { status: 'ok', service: 'AppGenius Backend' };
 });
