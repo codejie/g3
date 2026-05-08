@@ -16,23 +16,22 @@ load_env() {
 
 load_env
 
-# generate_frontend_config() {
-#   local config_file="$APPGENIUS_PATH/frontend/dist/config.js"
-#   {
-#     echo '// Auto-generated runtime config from .env'
-#     echo 'window.__APP_CONFIG__ = {'
-#     for var in VITE_OPENCODE_PORT VITE_OPENCODE_URL VITE_BACKEND_PORT VITE_BACKEND_URL \
-#                VITE_FRONTEND_PORT VITE_DATABASE_FILE VITE_WORKSPACE_ROOT \
-#                VITE_INIT_AGENT_MODE VITE_AGENT_BUILD VITE_AGENT_PLAN VITE_HIDE_THINKING \
-#                VITE_OPENCODE_CONFIG_PATH VITE_OPENCODE_SKILLS_PATH VITE_BACKEND_TEMPORARY_PATH; do
-#       if [ -n "${!var:-}" ]; then
-#         echo "  ${var}: \"${!var}\","
-#       fi
-#     done
-#   echo '};'
-#   echo '// Config embedded — overrides build-time values'
-#   } > "$config_file"
-# }
+generate_frontend_config() {
+  local config_file="$APPGENIUS_PATH/frontend/dist/config.js"
+  {
+    echo '// Auto-generated runtime config from .env'
+    echo 'window.__APP_CONFIG__ = {'
+    for var in VITE_OPENCODE_PORT VITE_OPENCODE_URL VITE_BACKEND_PORT VITE_BACKEND_URL \
+    VITE_FRONTEND_PORT VITE_DATABASE_FILE VITE_WORKSPACE_ROOT \
+    VITE_INIT_AGENT_MODE VITE_AGENT_BUILD VITE_AGENT_PLAN VITE_HIDE_THINKING \
+    VITE_OPENCODE_CONFIG_PATH VITE_OPENCODE_SKILLS_PATH VITE_BACKEND_TEMPORARY_PATH; do
+      if [ -n "${!var:-}" ]; then
+        echo "  ${var}: \"${!var}\","
+      fi
+    done
+    echo '};'
+  } > "$config_file"
+}
 
 start_opencode() {
   if [ -f "$PID_DIR/opencode.pid" ] && kill -0 "$(cat "$PID_DIR/opencode.pid")" 2>/dev/null; then
@@ -62,9 +61,9 @@ start_frontend() {
     echo "Frontend already running (PID $(cat "$PID_DIR/frontend.pid"))"
     return 1
   fi
+  generate_frontend_config
   cd "$APPGENIUS_PATH/frontend"
   local port="${VITE_FRONTEND_PORT:-10091}"
-  # generate_frontend_config
   nohup vite --host 0.0.0.0 --port "$port" dist > "$APPGENIUS_PATH/frontend.log" 2>&1 &
   echo $! > "$PID_DIR/frontend.pid"
   echo "Frontend started on port $port (PID $(cat "$PID_DIR/frontend.pid"))"

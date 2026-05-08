@@ -17,26 +17,26 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Extract services.tar.gz
 echo "[1/4] Extracting services.tar.gz -> $SERVICES_PATH"
 $SUDO mkdir -p "$SERVICES_PATH"
-$SUDO tar -xzf "$SCRIPT_DIR/services.tar.gz" -C "$SERVICES_PATH"
+$SUDO tar --warning=no-unknown-keyword -xzf "$SCRIPT_DIR/services.tar.gz" -C "$SERVICES_PATH"
 
 # Extract appgenius.tar.gz -> backend + frontend + node_modules
 echo "[2/4] Extracting appgenius -> $APPGENIUS_PATH"
 cd "$SCRIPT_DIR"
-tar -xzf appgenius.tar.gz
+tar --warning=no-unknown-keyword -xzf appgenius.tar.gz
 
 $SUDO mkdir -p "$APPGENIUS_PATH/backend" "$APPGENIUS_PATH/frontend"
 
-tar -xzf backend.tar.gz
+tar --warning=no-unknown-keyword -xzf backend.tar.gz
 $SUDO cp -r dist "$APPGENIUS_PATH/backend/"
 $SUDO cp package.json "$APPGENIUS_PATH/backend/"
 rm -rf dist
 
-tar -xzf appgenius_backend_modules_nodejsv22_centos8.tar.gz
+tar --warning=no-unknown-keyword -xzf appgenius_backend_modules_nodejsv22_centos8.tar.gz
 $SUDO cp -r appgenius_backend_modules_nodejsv22_centos8/node_modules "$APPGENIUS_PATH/backend/"
 $SUDO cp appgenius_backend_modules_nodejsv22_centos8/package-lock.json "$APPGENIUS_PATH/backend/"
 rm -rf appgenius_backend_modules_nodejsv22_centos8
 
-tar -xzf frontend.tar.gz
+tar --warning=no-unknown-keyword -xzf frontend.tar.gz
 $SUDO cp -r dist "$APPGENIUS_PATH/frontend/"
 rm -rf dist
 
@@ -45,10 +45,10 @@ $SUDO ln -sf "$APPGENIUS_PATH/.env" "$APPGENIUS_PATH/backend/.env"
 $SUDO ln -sf "$APPGENIUS_PATH/.env" "$APPGENIUS_PATH/frontend/.env"
 rm -f .env backend.tar.gz frontend.tar.gz
 
-# Extract config.tar.gz
-echo "[3/4] Extracting config.tar.gz -> $OPENCODE_CONFIG_PATH"
+# Extract opencode_config.tar.gz
+echo "[3/4] Extracting opencode_config.tar.gz -> $OPENCODE_CONFIG_PATH"
 mkdir -p "$OPENCODE_CONFIG_PATH"
-tar -xzf "$SCRIPT_DIR/config.tar.gz" -C "$OPENCODE_CONFIG_PATH"
+tar --warning=no-unknown-keyword -xzf "$SCRIPT_DIR/opencode_config.tar.gz" -C "$OPENCODE_CONFIG_PATH"
 
 echo "[4/4] Adding nodejs to PATH in ~/.bashrc"
 NODE_BIN_LINE='export PATH="/usr/local/lib/nodejs/node-v22.22.2-linux-arm64/bin:$PATH"'
