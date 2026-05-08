@@ -187,6 +187,11 @@ echo "[4/5] Extracting opencode_config.tar.gz -> $OPENCODE_CONFIG_PATH"
 mkdir -p "$OPENCODE_CONFIG_PATH"
 tar --warning=no-unknown-keyword -xzf "$SCRIPT_DIR/opencode_config.tar.gz" -C "$OPENCODE_CONFIG_PATH"
 
+if [ -f "$SCRIPT_DIR/scripts/restart_opencode.sh" ]; then
+  $SUDO cp "$SCRIPT_DIR/scripts/restart_opencode.sh" "$OPENCODE_CONFIG_PATH/opencode/restart_opencode.sh"
+  $SUDO chmod +x "$OPENCODE_CONFIG_PATH/opencode/restart_opencode.sh"
+fi
+
 echo "[5/5] Deployment finished"
 
 echo ""

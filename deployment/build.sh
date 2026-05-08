@@ -38,8 +38,9 @@ tar -czf "$SCRIPT_DIR/frontend.tar.gz" dist
 echo "Packaging appgenius.tar.gz..."
 cd "$SCRIPT_DIR"
 tar -czf appgenius.tar.gz \
-  -C "$SCRIPT_DIR" backend.tar.gz frontend.tar.gz \
-  -C "$PROJECT_DIR" .env.release
+-C "$SCRIPT_DIR" backend.tar.gz frontend.tar.gz \
+-C "$PROJECT_DIR" .env.release \
+-C "$PROJECT_DIR" scripts
 
 # Clean intermediate tarballs
 rm -f "$SCRIPT_DIR"/backend.tar.gz "$SCRIPT_DIR"/frontend.tar.gz

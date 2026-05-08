@@ -1,16 +1,31 @@
 <template>
   <div class="chat-input-wrapper">
-    <!-- Quick Actions -->
-    <div class="quick-actions">
+<!-- Quick Actions -->
+<div class="quick-actions">
+  <button
+    v-for="action in visibleActions"
+    :key="action.id"
+    @click="handleQuickAction(action)"
+    class="quick-action-btn"
+  >
+    {{ action.label }}
+  </button>
+  <div v-if="overflowActions.length" class="more-actions-wrapper">
+    <button class="quick-action-btn more-btn" @click="moreActionsOpen = !moreActionsOpen">
+      ...
+    </button>
+    <div v-if="moreActionsOpen" class="more-actions-popup">
       <button
-        v-for="action in quickActions"
+        v-for="action in overflowActions"
         :key="action.id"
-        @click="handleQuickAction(action)"
-        class="quick-action-btn"
+        @click="handleQuickAction(action); moreActionsOpen = false"
+        class="more-action-item"
       >
         {{ action.label }}
       </button>
     </div>
+  </div>
+</div>
 
     <!-- Input Area -->
     <div class="input-container">
@@ -124,6 +139,9 @@ const emit = defineEmits<{
 const skillsList = ref<Skill[]>([]);
 const skillsLoading = ref(false);
 const skillsDropdownOpen = ref(false);
+const moreActionsOpen = ref(false);
+
+const MAX_VISIBLE_ACTIONS = 5;
 
 const fetchSkills = async () => {
   skillsLoading.value = true;
@@ -184,17 +202,27 @@ const handleClickOutside = (e: MouseEvent) => {
   if (!target.closest('.skills-dropdown')) {
     skillsDropdownOpen.value = false;
   }
+  if (!target.closest('.more-actions-wrapper')) {
+    moreActionsOpen.value = false;
+  }
 };
 
 onMounted(() => document.addEventListener('click', handleClickOutside));
 onUnmounted(() => document.removeEventListener('click', handleClickOutside));
 
 const quickActions = computed(() => [
-  { id: 'writing', label: t('chatInput.quickWriting'), prompt: t('chatInput.quickWriting') + '...' },
-  { id: 'page', label: t('chatInput.quickPage'), prompt: t('chatInput.quickPage') + '...' },
-  { id: 'app', label: t('chatInput.quickApp'), prompt: t('chatInput.quickApp') + '...' },
-  { id: 'excel', label: t('chatInput.quickExcel'), prompt: t('chatInput.quickExcel') + '...' }
+  { id: 'page', label: t('chatInput.quickPage'), prompt: t('chatInput.promptPage') },
+  { id: 'app', label: t('chatInput.quickApp'), prompt: t('chatInput.promptApp') },
+  { id: 'writing', label: t('chatInput.quickWriting'), prompt: t('chatInput.promptWriting') },
+  { id: 'excel', label: t('chatInput.quickExcel'), prompt: t('chatInput.promptExcel') },
+  { id: 'debug', label: t('chatInput.quickDebug'), prompt: t('chatInput.promptDebug') },
+  { id: 'refactor', label: t('chatInput.quickRefactor'), prompt: t('chatInput.promptRefactor') },
+  { id: 'api', label: t('chatInput.quickApi'), prompt: t('chatInput.promptApi') },
+  { id: 'explain', label: t('chatInput.quickExplain'), prompt: t('chatInput.promptExplain') }
 ]);
+
+const visibleActions = computed(() => quickActions.value.slice(0, MAX_VISIBLE_ACTIONS));
+const overflowActions = computed(() => quickActions.value.slice(MAX_VISIBLE_ACTIONS));
 
 const handleQuickAction = (action: { id: string; label: string; prompt: string }) => {
   emit('update:modelValue', action.prompt);
@@ -233,6 +261,52 @@ const handleSubmit = () => {
 .quick-action-btn:hover {
   border-color: var(--accent-brand);
   background: var(--bg-300);
+  color: var(--text-100);
+}
+
+.more-actions-wrapper {
+  position: relative;
+}
+
+.more-btn {
+  letter-spacing: 1px;
+  min-width: 32px;
+  text-align: center;
+}
+
+.more-actions-popup {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 6px;
+  background: var(--bg-000);
+  border: 1px solid var(--border-200);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  z-index: 100;
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.more-action-item {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-300);
+  transition: all 0.15s;
+}
+
+.more-action-item:hover {
+  background: var(--bg-200);
   color: var(--text-100);
 }
 

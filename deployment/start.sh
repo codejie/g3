@@ -70,9 +70,18 @@ start_frontend() {
 }
 
 case "${1:-all}" in
-  opencode) start_opencode ;;
-  backend)  start_backend ;;
-  frontend) start_frontend ;;
-  all)      start_opencode; start_backend; start_frontend ;;
-  *)        echo "Usage: $0 {opencode|backend|frontend|all}" ;;
+opencode) start_opencode ;;
+backend) start_backend ;;
+frontend) start_frontend ;;
+restart_opencode)
+  OPENCODE_CONFIG_DIR="${VITE_OPENCODE_CONFIG_PATH:-$HOME/.config/opencode}"
+  if [ -f "$OPENCODE_CONFIG_DIR/restart_opencode.sh" ]; then
+    bash "$OPENCODE_CONFIG_DIR/restart_opencode.sh"
+  else
+    echo "restart_opencode.sh not found at $OPENCODE_CONFIG_DIR/restart_opencode.sh"
+    exit 1
+  fi
+  ;;
+all) start_opencode; start_backend; start_frontend ;;
+*) echo "Usage: $0 {opencode|backend|frontend|restart_opencode|all}" ;;
 esac

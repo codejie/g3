@@ -50,6 +50,11 @@ echo "[3/4] Extracting opencode_config.tar.gz -> $OPENCODE_CONFIG_PATH"
 mkdir -p "$OPENCODE_CONFIG_PATH"
 tar --warning=no-unknown-keyword -xzf "$SCRIPT_DIR/opencode_config.tar.gz" -C "$OPENCODE_CONFIG_PATH"
 
+if [ -f "$SCRIPT_DIR/scripts/restart_opencode.sh" ]; then
+  $SUDO cp "$SCRIPT_DIR/scripts/restart_opencode.sh" "$OPENCODE_CONFIG_PATH/opencode/restart_opencode.sh"
+  $SUDO chmod +x "$OPENCODE_CONFIG_PATH/opencode/restart_opencode.sh"
+fi
+
 echo "[4/4] Adding nodejs to PATH in ~/.bashrc"
 NODE_BIN_LINE='export PATH="/usr/local/lib/nodejs/node-v22.22.2-linux-arm64/bin:$PATH"'
 if ! grep -qF "$NODE_BIN_LINE" "$HOME/.bashrc" 2>/dev/null; then

@@ -1,15 +1,17 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { execFile } from 'child_process';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { resolve } from 'path';
+import { homedir } from 'os';
 import type { ExecuteScriptRequest } from '../../apis/extension/types/system';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-const SCRIPTS_DIR = resolve(__dirname, '../../../../'); // backend root
+function getOpencodeConfigDir(): string {
+  const raw = process.env.VITE_OPENCODE_CONFIG_PATH || '';
+  const path = raw.startsWith('~') ? raw.replace('~', homedir()) : raw;
+  return path || resolve(homedir(), '.config/opencode');
+}
 
 const ALLOWED_SCRIPTS: Record<string, string> = {
-  restart_opencode: resolve(SCRIPTS_DIR, 'restart_opencode.sh'),
+  restart_opencode: resolve(getOpencodeConfigDir(), 'restart_opencode.sh'),
 };
 
 const RESPONSE_CODES = {
