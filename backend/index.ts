@@ -75,6 +75,10 @@ const { default: sessionRoutes } = await import('./src/modules/session/routes.js
 fastify.register(sessionRoutes);
 console.log('Session routes loaded');
 
+const { default: keywordRoutes } = await import('./src/modules/keyword/routes.js');
+fastify.register(keywordRoutes);
+console.log('Keyword routes loaded');
+
 fastify.get('/', async () => {
   return { status: 'ok', service: 'AppGenius Backend' };
 });

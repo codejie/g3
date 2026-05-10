@@ -1,102 +1,120 @@
 <template>
   <div class="chat-input-wrapper">
-<!-- Quick Actions -->
-<div class="quick-actions">
-  <button
-    v-for="action in visibleActions"
-    :key="action.id"
-    @click="handleQuickAction(action)"
-    class="quick-action-btn"
-  >
-    {{ action.label }}
-  </button>
-  <div v-if="overflowActions.length" class="more-actions-wrapper">
-    <button class="quick-action-btn more-btn" @click="moreActionsOpen = !moreActionsOpen">
-      ...
-    </button>
-    <div v-if="moreActionsOpen" class="more-actions-popup">
-      <button
-        v-for="action in overflowActions"
-        :key="action.id"
-        @click="handleQuickAction(action); moreActionsOpen = false"
-        class="more-action-item"
-      >
-        {{ action.label }}
-      </button>
+    <!-- Quick Actions: Two-layer Keyword → Prompts -->
+    <div class="quick-actions">
+      <template v-if="activeKeywordId">
+        <button
+          class="quick-action-btn back-btn"
+          @click="handleBackFromPrompts"
+        >
+          &larr;
+        </button>
+        <button
+          v-for="prompt in activePrompts"
+          :key="prompt.id"
+          @click="handlePromptSelect(prompt)"
+          class="quick-action-btn prompt-btn"
+        >
+          {{ prompt.label }}
+        </button>
+      </template>
+      <template v-else>
+        <button
+          v-for="item in visibleKeywords"
+          :key="item.keyword.id"
+          @click="handleKeywordClick(item.keyword.id)"
+          class="quick-action-btn"
+        >
+          {{ item.keyword.keyword }}
+        </button>
+        <div v-if="overflowKeywords.length" class="more-actions-wrapper">
+          <button class="quick-action-btn more-btn" @click="moreActionsOpen = !moreActionsOpen">
+            ...
+          </button>
+          <div v-if="moreActionsOpen" class="more-actions-popup">
+            <button
+              v-for="item in overflowKeywords"
+              :key="item.keyword.id"
+              @click="handleKeywordClick(item.keyword.id); moreActionsOpen = false"
+              class="more-action-item"
+            >
+              {{ item.keyword.keyword }}
+            </button>
+          </div>
+        </div>
+      </template>
     </div>
-  </div>
-</div>
 
     <!-- Input Area -->
     <div class="input-container">
-    <textarea
-      :value="modelValue"
-      @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
-      @keydown.ctrl.enter="handleSubmit"
-      @keydown.meta.enter="handleSubmit"
-      class="input-textarea"
+      <textarea
+        :value="modelValue"
+        @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
+        @keydown.ctrl.enter="handleSubmit"
+        @keydown.meta.enter="handleSubmit"
+        class="input-textarea"
         :placeholder="t('chatInput.placeholder')"
-      rows="2"
-      :disabled="disabled"
-    ></textarea>
+        rows="2"
+        :disabled="disabled"
+      ></textarea>
 
       <!-- Bottom Controls -->
       <div class="input-controls">
-      <div class="left-controls">
-      </div>
-
-      <div class="right-controls">
-        <!-- Skills Dropdown -->
-        <div class="skills-dropdown" :class="{ open: skillsDropdownOpen }">
-          <button
-            class="skills-trigger"
-            @click="toggleSkillsDropdown"
-            :disabled="disabled"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            <span>{{ t('chatInput.skills') }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div v-if="skillsDropdownOpen" class="skills-options">
-        <div v-if="skillsLoading" class="skills-loading">{{ t('chatInput.skillsLoading') }}</div>
-        <div v-else-if="skillsList.length === 0" class="skills-empty">{{ t('chatInput.noSkills') }}</div>
-            <button
-              v-else
-              v-for="skill in skillsList"
-              :key="skill.name"
-              class="skill-item"
-              @click="handleSkillSelect(skill)"
-            >
-              <span class="skill-name">{{ skill.name }}</span>
-              <span class="skill-desc">{{ truncateDesc(skill.description) }}</span>
-            </button>
-          </div>
+        <div class="left-controls">
         </div>
 
-        <!-- Mode Dropdown -->
-        <div class="mode-dropdown" :class="{ open: modeDropdownOpen }">
-          <button
-            class="mode-trigger"
-            @click="modeDropdownOpen = !modeDropdownOpen"
-            :disabled="disabled"
-          >
-            <span class="mode-label">{{ currentMode }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div v-if="modeDropdownOpen" class="mode-options">
+        <div class="right-controls">
+          <!-- Skills Dropdown -->
+          <div class="skills-dropdown" :class="{ open: skillsDropdownOpen }">
             <button
-              v-for="option in agentModes"
-              :key="option.id"
-              class="mode-option"
-              :class="{ active: currentMode === option.id }"
-              @click="selectMode(option.id)"
+              class="skills-trigger"
+              @click="toggleSkillsDropdown"
+              :disabled="disabled"
             >
-              <span class="mode-option-label">{{ option.label }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              <span>{{ t('chatInput.skills') }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
+            <div v-if="skillsDropdownOpen" class="skills-options">
+              <div v-if="skillsLoading" class="skills-loading">{{ t('chatInput.skillsLoading') }}</div>
+              <div v-else-if="skillsList.length === 0" class="skills-empty">{{ t('chatInput.noSkills') }}</div>
+              <button
+                v-else
+                v-for="skill in skillsList"
+                :key="skill.name"
+                class="skill-item"
+                @click="handleSkillSelect(skill)"
+              >
+                <span class="skill-name">{{ skill.name }}</span>
+                <span class="skill-desc">{{ truncateDesc(skill.description) }}</span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- Send Button -->
+          <!-- Mode Dropdown -->
+          <div class="mode-dropdown" :class="{ open: modeDropdownOpen }">
+            <button
+              class="mode-trigger"
+              @click="modeDropdownOpen = !modeDropdownOpen"
+              :disabled="disabled"
+            >
+              <span class="mode-label">{{ currentMode }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div v-if="modeDropdownOpen" class="mode-options">
+              <button
+                v-for="option in agentModes"
+                :key="option.id"
+                class="mode-option"
+                :class="{ active: currentMode === option.id }"
+                @click="selectMode(option.id)"
+              >
+                <span class="mode-option-label">{{ option.label }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Send Button -->
           <button
             @click="handleSubmit"
             :disabled="loading || disabled || !modelValue.trim()"
@@ -116,6 +134,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { skillApi, setConfig } from '../../apis/opencode/api';
 import type { Skill } from '../../apis/opencode/types';
+import type { Prompt } from '../../apis/extension/types/keyword';
+import { useKeywordStore } from '../../store/keywordStore';
 import { getEnv } from '../../utils/runtimeEnv';
 
 interface Props {
@@ -136,12 +156,33 @@ const emit = defineEmits<{
   (e: 'skillSelect', skill: Skill): void;
 }>();
 
+const keywordStore = useKeywordStore();
+
 const skillsList = ref<Skill[]>([]);
 const skillsLoading = ref(false);
 const skillsDropdownOpen = ref(false);
 const moreActionsOpen = ref(false);
 
-const MAX_VISIBLE_ACTIONS = 5;
+const MAX_VISIBLE_KEYWORDS = 5;
+
+const activeKeywordId = computed(() => keywordStore.activeKeywordId);
+const activePrompts = computed(() => keywordStore.activeKeyword?.prompts ?? []);
+
+const visibleKeywords = computed(() => keywordStore.items.slice(0, MAX_VISIBLE_KEYWORDS));
+const overflowKeywords = computed(() => keywordStore.items.slice(MAX_VISIBLE_KEYWORDS));
+
+const handleKeywordClick = (keywordId: string) => {
+  keywordStore.setActiveKeyword(keywordId);
+};
+
+const handleBackFromPrompts = () => {
+  keywordStore.setActiveKeyword(null);
+};
+
+const handlePromptSelect = (prompt: Prompt) => {
+  emit('update:modelValue', prompt.prompt);
+  keywordStore.setActiveKeyword(null);
+};
 
 const fetchSkills = async () => {
   skillsLoading.value = true;
@@ -207,26 +248,13 @@ const handleClickOutside = (e: MouseEvent) => {
   }
 };
 
-onMounted(() => document.addEventListener('click', handleClickOutside));
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+  if (keywordStore.items.length === 0 && !keywordStore.loading) {
+    keywordStore.fetchKeywords();
+  }
+});
 onUnmounted(() => document.removeEventListener('click', handleClickOutside));
-
-const quickActions = computed(() => [
-  { id: 'page', label: t('chatInput.quickPage'), prompt: t('chatInput.promptPage') },
-  { id: 'app', label: t('chatInput.quickApp'), prompt: t('chatInput.promptApp') },
-  { id: 'writing', label: t('chatInput.quickWriting'), prompt: t('chatInput.promptWriting') },
-  { id: 'excel', label: t('chatInput.quickExcel'), prompt: t('chatInput.promptExcel') },
-  { id: 'debug', label: t('chatInput.quickDebug'), prompt: t('chatInput.promptDebug') },
-  { id: 'refactor', label: t('chatInput.quickRefactor'), prompt: t('chatInput.promptRefactor') },
-  { id: 'api', label: t('chatInput.quickApi'), prompt: t('chatInput.promptApi') },
-  { id: 'explain', label: t('chatInput.quickExplain'), prompt: t('chatInput.promptExplain') }
-]);
-
-const visibleActions = computed(() => quickActions.value.slice(0, MAX_VISIBLE_ACTIONS));
-const overflowActions = computed(() => quickActions.value.slice(MAX_VISIBLE_ACTIONS));
-
-const handleQuickAction = (action: { id: string; label: string; prompt: string }) => {
-  emit('update:modelValue', action.prompt);
-};
 
 const handleSubmit = () => {
   emit('submit');
@@ -262,6 +290,29 @@ const handleSubmit = () => {
   border-color: var(--accent-brand);
   background: var(--bg-300);
   color: var(--text-100);
+}
+
+.back-btn {
+  padding: 6px 12px;
+  color: var(--text-400);
+  border-color: var(--border-100);
+}
+
+.back-btn:hover {
+  color: var(--accent-brand);
+  border-color: var(--accent-brand);
+}
+
+.prompt-btn {
+  border-color: var(--accent-brand);
+  color: var(--accent-brand);
+  background: transparent;
+  opacity: 0.85;
+}
+
+.prompt-btn:hover {
+  opacity: 1;
+  background: var(--bg-300);
 }
 
 .more-actions-wrapper {
@@ -417,8 +468,7 @@ const handleSubmit = () => {
   border-radius: 10px;
 }
 
-.skills-loading,
-.skills-empty {
+.skills-loading, .skills-empty {
   padding: 12px 16px;
   font-size: 12px;
   color: var(--text-400);

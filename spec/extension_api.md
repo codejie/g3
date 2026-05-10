@@ -611,3 +611,140 @@ interface ExecuteScriptRequest extends BaseRequest {
 }
 ``` 
 - **响应结果数据**: 无响应数据返回，使用 `BaseResponse<void>`
+
+
+# 系统快捷提示词接口设计
+描述了快捷提示词相关接口的设计，包括获取提示词列表和添加/删除提示词等功能
+## 模块类型描述
+- **Keywords**: 快捷提示词实体，包含以下字段：
+  - id: 提示词ID，唯一标识符
+  - keyword: 关键词名称，字符串类型
+  - description?: 提示词描述信息，字符串类型（可选）
+  - disabled: 提示词是否禁用，int类型（0表示启用，1表示禁用）,default为0
+  - order: 提示词排序，数字类型，默认值为0，数值越大排序越靠前
+  - type: 提示词类型，字符串类型，如general、project_specific等, default为general
+  - created: 提示词创建时间，日期时间类型
+  - updated: 提示词更新时间，日期时间类型
+
+- **Prompt**: 提示词内容实体，包含以下字段：
+  - id: 提示词内容ID，唯一标识符
+  - keyword_id: 关键词ID，关联Keywords实体
+  - label: 提示词显示内容，字符串类型
+  - prompt: 提示词内容，字符串类型，用于提交给模型的实际提示词文本
+  - description?: 提示词内容描述信息，字符串类型（可选）
+  - disabled: 提示词内容是否禁用，int类型（0表示启用，1表示禁用）,default为0
+  - order: 提示词内容排序，数字类型，默认值为0，数值越大排序越靠前
+  - created: 提示词内容创建时间，日期时间类型
+  - updated: 提示词内容更新时间，日期时间类型
+
+## 接口报文结构定义
+### 获取提示词列表接口
+- **接口描述**: 获取提示词列表接口，返回系统中所有的快捷提示词信息
+- **请求结构**:
+```typescript
+interface GetKeywordsRequest extends BaseRequest {
+  keyword?: string; // 可选，关键词名称，支持模糊匹配
+  type?: string; // 可选，提示词类型，如general、project_specific等, default为general
+}
+```
+
+- **响应结果数据**:
+```typescriptinterface GetKeywordsResult {
+  items: {
+    keyword: Keywords; // 关键词信息
+    prompts: Prompt[]; // 提示词内容列表
+  }[]; // 关键词列表，包含关键词信息和对应的提示词内容列表
+}
+```
+### 添加关键词接口
+- **接口描述**: 添加关键词接口，允许用户添加新的快捷关键词的信息
+- **请求结构**:
+```typescript
+interface AddKeywordRequest extends BaseRequest {
+  keyword: string; // 关键词名称
+  description?: string; // 可选，提示词描述信息
+  order?: number; // 可选，提示词排序，默认值为0，数值越大排序越靠前
+  type?: string; // 可选，提示词类型，如general、project_specific等, default为general
+}
+```
+- **响应结果数据**:
+```typescript
+interface AddKeywordResult {
+  id: string; // 新增的关键词ID
+}
+```
+### 删除关键词接口
+- **接口描述**: 删除关键词接口，允许用户删除指定的快捷关键词，同时删除关联的提示词内容
+- **请求结构**:
+```typescript
+interface DeleteKeywordRequest extends BaseRequest {
+  id: string; // 关键词ID
+}
+```
+- **响应结果数据**: 无响应数据返回，使用 `BaseResponse<void>`
+
+### 更新关键词接口
+- **接口描述**: 更新关键词接口，允许用户修改快捷关键词的信息，如名称、描述信息、排序和类型等
+- **请求结构**:
+```typescript
+interface UpdateKeywordRequest extends BaseRequest {
+  id: string; // 关键词ID
+  keyword?: string; // 可选，关键词名称
+  description?: string; // 可选，提示词描述信息
+  order?: number; // 可选，提示词排序，默认值为0，数值越大排序越靠前
+  type?: string; // 可选，提示词类型，如general、project_specific等, default为general
+}
+```
+- **响应结果数据**:
+```typescript
+interface UpdateKeywordResult {
+  id: string; // 更新的关键词ID
+}
+```
+
+### 添加提示词内容接口
+- **接口描述**: 添加提示词内容接口，允许用户为指定的关键词添加新的提示词内容
+- **请求结构**:
+```typescript
+interface AddPromptRequest extends BaseRequest {
+  keyword_id: string; // 关键词ID
+  label: string; // 提示词显示内容
+  prompt: string; // 提示词内容
+  description?: string; // 可选，提示词内容描述信息
+  order?: number; // 可选，提示词内容排序，默认值为0，数值越大排序越靠前
+}
+```
+- **响应结果数据**:
+```typescript
+interface AddPromptResult {
+  id: string; // 新增的提示词内容ID
+}
+```
+### 删除提示词内容接口
+- **接口描述**: 删除提示词内容接口，允许用户删除指定的提示词内容
+- **请求结构**:
+```typescript
+interface DeletePromptRequest extends BaseRequest {
+  id: string; // 提示词内容ID  
+```}
+```
+- **响应结果数据**: 无响应数据返回，使用 `BaseResponse<void>`
+
+### 更新提示词内容接口
+- **接口描述**: 更新提示词内容接口，允许用户修改提示词内容的信息，如内容文本、描述信息和排序等
+- **请求结构**:
+```typescript
+interface UpdatePromptRequest extends BaseRequest {
+  id: string; // 提示词内容ID
+  label?: string; // 可选，提示词显示内容
+  prompt?: string; // 可选，提示词内容
+  description?: string; // 可选，提示词内容描述信息
+  order?: number; // 可选，提示词内容排序，默认值为0，数值越大排序越靠前
+}
+```
+- **响应结果数据**:
+```typescript
+interface UpdatePromptResult {
+  id: string; // 更新的提示词内容ID
+}
+```
