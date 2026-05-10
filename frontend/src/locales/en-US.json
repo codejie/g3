@@ -148,7 +148,7 @@
   "fileTree": {
     "enterDir": "Enter directory",
     "download": "Download",
-    "downloadConfirmDir": "Download directory \"{name}\"?\nIt will be packed as .tar.gz",
+    "downloadConfirmDir": "Download directory \"{name}\"?\nIt will be packed as .zip",
     "downloadConfirmFile": "Download file \"{name}\"?",
     "downloadTitle": "Download",
     "downloadBtn": "Download",
@@ -165,7 +165,7 @@
     "logView": "Logs",
     "skillsManagement": "Skills Management",
     "sessionManagement": "Session Management",
-    "opencodeConfig": "OpenCode Config",
+    "opencodeConfig": "Agent Config",
     "systemConfig": "System Config",
     "brand": "AppGenius Admin",
     "logout": "Sign Out",
@@ -234,11 +234,11 @@
     "updateSuccess": "Updated successfully",
     "updateFailed": "Failed to update",
     "restartRequiredTitle": "Operation Successful",
-    "restartRequiredMessage": "The operation was successful, but you need to restart OpenCode for the changes to take effect. You can restart OpenCode on the \"OpenCode Config\" page.",
-    "restartRequiredConfirm": "OK"
-  },
-  "skillsManagement": {
-    "title": "Skills Management",
+"restartRequiredMessage": "The operation was successful, but you need to restart Agent for the changes to take effect. You can restart Agent on the \"Agent Config\" page.",
+  "restartRequiredConfirm": "OK"
+},
+"skillsManagement": {
+  "title": "Skills Management",
     "skillCount": "{count} Skills",
     "name": "Name",
     "description": "Description",
@@ -267,7 +267,7 @@
     "deleteSuccess": "Skill \"{name}\" deleted",
     "deleteFailed": "Failed to delete skill",
     "restartRequiredTitle": "Operation Successful",
-    "restartRequiredMessage": "The operation was successful, but you need to restart OpenCode for the changes to take effect. You can restart OpenCode on the \"OpenCode Config\" page.",
+    "restartRequiredMessage": "The operation was successful, but you need to restart Agent for the changes to take effect. You can restart Agent on the \"Agent Config\" page.",
     "restartRequiredConfirm": "OK"
   },
   "userManagement": {
@@ -328,7 +328,7 @@
     "genderOther": "Other"
   },
   "opencodeConfig": {
-    "title": "OpenCode Config",
+    "title": "Agent Config",
     "refresh": "Refresh",
     "save": "Save",
     "saving": "Saving…",
@@ -350,19 +350,19 @@
     "uploadTitle": "Upload Config",
     "uploadConfirm": "Uploading will overwrite the current \"{name}\" file. Continue?",
     "downloadFailed": "Failed to download",
-    "restartTitle": "Restart OpenCode",
-    "restartConfirm": "This will restart the OpenCode service. Any ongoing operations will be interrupted and cannot be recovered. Continue?",
+"restartTitle": "Restart Agent",
+  "restartConfirm": "This will restart the Agent service. Any ongoing operations will be interrupted and cannot be recovered. Continue?",
     "restartConfirmBtn": "Restart",
     "restartCancelBtn": "Cancel",
-    "restartOpencode": "Restart OpenCode",
+    "restartOpencode": "Restart Agent",
     "restarting": "Restarting…",
     "restartSuccess": "Restart command sent",
     "restartFailed": "Failed to restart"
   },
   "restartAlert": {
-    "message": "Configuration changed, restart OpenCode to take effect",
-    "confirmTitle": "Restart Required",
-    "confirmMessage": "Configuration changes require restarting OpenCode to take effect. You can restart later from the OpenCode Config page.",
+"message": "Configuration changed, restart Agent to take effect",
+  "confirmTitle": "Restart Required",
+  "confirmMessage": "Configuration changes require restarting Agent to take effect. You can restart later from the Agent Config page.",
     "confirmOk": "OK"
   },
   "sessionManagement": {

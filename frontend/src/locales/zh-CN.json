@@ -148,7 +148,7 @@
   "fileTree": {
     "enterDir": "进入目录",
     "download": "下载",
-    "downloadConfirmDir": "确认下载目录 \"{name}\" 吗？\n目录将打包为 .tar.gz 后下载",
+    "downloadConfirmDir": "确认下载目录 \"{name}\" 吗？\n目录将打包为 .zip 后下载",
     "downloadConfirmFile": "确认下载文件 \"{name}\" 吗？",
     "downloadTitle": "下载确认",
     "downloadBtn": "下载",
@@ -165,7 +165,7 @@
     "logView": "日志查看",
     "skillsManagement": "Skills管理",
     "sessionManagement": "Session管理",
-    "opencodeConfig": "OpenCode配置",
+    "opencodeConfig": "Agent配置",
     "systemConfig": "系统配置",
     "brand": "AppGenius Admin",
     "logout": "登出",
@@ -234,11 +234,11 @@
     "updateSuccess": "更新成功",
     "updateFailed": "更新失败",
     "restartRequiredTitle": "操作成功",
-    "restartRequiredMessage": "操作已成功，但需要重启 OpenCode 才能生效。您可以在「OpenCode配置」页面中执行重启操作。",
-    "restartRequiredConfirm": "知道了"
-  },
-  "skillsManagement": {
-    "title": "Skills管理",
+"restartRequiredMessage": "操作已成功，但需要重启 Agent 才能生效。您可以在「Agent配置」页面中执行重启操作。",
+  "restartRequiredConfirm": "知道了"
+},
+"skillsManagement": {
+  "title": "Skills管理",
     "skillCount": "共 {count} 个 Skills",
     "name": "名称",
     "description": "描述",
@@ -267,10 +267,10 @@
     "deleteSuccess": "Skill \"{name}\" 已删除",
     "deleteFailed": "删除失败",
     "restartRequiredTitle": "操作成功",
-    "restartRequiredMessage": "操作已成功，但需要重启 OpenCode 才能生效。您可以在「OpenCode配置」页面中执行重启操作。",
-    "restartRequiredConfirm": "知道了"
-  },
-  "userManagement": {
+"restartRequiredMessage": "操作已成功，但需要重启 Agent 才能生效。您可以在「Agent配置」页面中执行重启操作。",
+  "restartRequiredConfirm": "知道了"
+},
+"userManagement": {
     "title": "用户管理",
     "tabAll": "全部",
     "tabAdmin": "管理员",
@@ -328,7 +328,7 @@
     "genderOther": "其他"
   },
   "opencodeConfig": {
-    "title": "OpenCode配置",
+    "title": "Agent配置",
     "refresh": "刷新",
     "save": "保存",
     "saving": "保存中…",
@@ -350,19 +350,19 @@
     "uploadTitle": "上传配置",
     "uploadConfirm": "上传将覆盖当前 \"{name}\" 文件，确定继续吗？",
     "downloadFailed": "下载失败",
-    "restartTitle": "重新启动 OpenCode",
-    "restartConfirm": "此操作将重启 OpenCode 服务，可能导致正在进行的操作中断，且过程不可恢复。确定要继续吗？",
+"restartTitle": "重新启动 Agent",
+  "restartConfirm": "此操作将重启 Agent 服务，可能导致正在进行的操作中断，且过程不可恢复。确定要继续吗？",
     "restartConfirmBtn": "确定重启",
     "restartCancelBtn": "取消",
-    "restartOpencode": "重新启动OpenCode",
+    "restartOpencode": "重新启动Agent",
     "restarting": "重启中…",
     "restartSuccess": "重启命令已发送",
     "restartFailed": "重启失败"
   },
   "restartAlert": {
-    "message": "模型配置更改，重启OpenCode生效",
-    "confirmTitle": "需要重启",
-    "confirmMessage": "配置更改需要重启OpenCode才能生效，您可以在OpenCode配置页面稍后重启。",
+"message": "模型配置更改，重启Agent生效",
+  "confirmTitle": "需要重启",
+  "confirmMessage": "配置更改需要重启Agent才能生效，您可以在Agent配置页面稍后重启。",
     "confirmOk": "确定"
   },
   "sessionManagement": {

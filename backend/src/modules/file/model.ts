@@ -83,20 +83,14 @@ export async function downloadFile(userId: string, projectId: string, relativePa
   const fileStat = statSync(fullPath);
 
   if (fileStat.isDirectory()) {
-    const { execSync } = await import('child_process');
-    const tmpDir = resolve(process.cwd(), 'data/tmp');
-    if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
-
-    const archiveName = `${basename(fullPath) || 'archive'}.tar.gz`;
-  const archivePath = join(tmpDir, `${projectId}-${Date.now()}-${archiveName}`);
-
-  const workspace = getProjectWorkspacePath(userId, projectId);
-    const relativeDir = relativePath;
-
-    execSync(`tar -czf "${archivePath}" -C "${workspace}" "${relativeDir}"`, { cwd: workspace });
+    const archiveName = `${basename(fullPath) || 'archive'}.zip`;
+    const archiverMod = await import('archiver') as any;
+    const archive = new archiverMod.ZipArchive({ zlib: { level: 6 } });
+    archive.directory(fullPath, basename(fullPath));
+    archive.finalize();
 
     return {
-      stream: createReadStream(archivePath),
+      stream: archive as unknown as NodeJS.ReadableStream,
       filename: archiveName,
       isDirectory: true,
     };

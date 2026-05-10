@@ -3,8 +3,7 @@ import type { MultipartValue } from '@fastify/multipart';
 import { listFiles, deleteFile, downloadFile, uploadFile, getFilePath, ensureWorkspace, readFileContent, readOpencodeConfig, saveOpencodeConfig, downloadOpencodeConfig } from './model.js';
 import { statSync } from 'fs';
 import type { GetFilesRequest, DeleteFileRequest, DownloadFileRequest } from '../../apis/extension/types/file';
-import { unlink } from 'fs/promises';
-import { resolve, basename } from 'path';
+import { basename } from 'path';
 
 const RESPONSE_CODES = {
   SUCCESS: 0,
@@ -107,7 +106,7 @@ export async function downloadFileHandler(request: FastifyRequest, reply: Fastif
     reply.raw.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
     if (result.isDirectory) {
-      reply.raw.setHeader('Content-Type', 'application/gzip');
+          reply.raw.setHeader('Content-Type', 'application/zip');
     } else {
       const fullPath = getFilePath(userId, project_id, path);
       const fileStat = statSync(fullPath);
@@ -128,15 +127,7 @@ export async function downloadFileHandler(request: FastifyRequest, reply: Fastif
   reply.hijack();
     stream.pipe(reply.raw);
 
-    stream.on('end', () => {
-      if (result.isDirectory) {
-        const tmpDir = resolve(process.cwd(), 'data/tmp');
-        const archivePath = resolve(tmpDir, `${project_id}-${Date.now()}`);
-        unlink(archivePath).catch(() => {});
-      }
-    });
-
-    stream.on('error', (err) => {
+  stream.on('error', (err) => {
       console.error('Download stream error:', err);
       if (!reply.raw.headersSent) {
         reply.raw.writeHead(500);

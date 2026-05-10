@@ -96,11 +96,10 @@ const ensureExtensionConfig = () => {
 }
 
 const tabs = computed(() => [
-  { key: 'opencode.json', label: 'opencode.json' },
   { key: 'config.json', label: 'config.json' },
 ])
 
-const activeTab = ref('opencode.json')
+const activeTab = ref('config.json')
 const originalContent = ref('')
 const editContent = ref('')
 const loading = ref(false)

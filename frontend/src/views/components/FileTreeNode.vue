@@ -192,7 +192,7 @@ const handleDownload = async () => {
   downloading.value = true;
   initExtApi();
   try {
-    const fallback = props.node.type === 'directory' ? `${props.node.name}.tar.gz` : props.node.name;
+    const fallback = props.node.type === 'directory' ? `${props.node.name}.zip` : props.node.name;
     const { blob, filename } = await fileApi.download({ project_id: props.projectId, path: currentPath.value }, fallback);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
