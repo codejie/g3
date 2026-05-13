@@ -98,7 +98,7 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
 }
 
 export async function registerHandler(request: FastifyRequest, reply: FastifyReply) {
-  const { username, password, role } = request.body as RegisterRequest;
+  const { username, password, role, name, email, nickname, gender, description, department, remark } = request.body as RegisterRequest;
 
   if (!username || !password) {
     return reply.send({
@@ -125,10 +125,13 @@ export async function registerHandler(request: FastifyRequest, reply: FastifyRep
     profileId: undefined
   });
 
+  const profileName = name || username;
+  const profileGender = gender || 'other';
+
   const insertProfile = db.prepare(
-    'INSERT INTO profiles (id, user_id, name, gender, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+    'INSERT INTO profiles (id, user_id, name, email, nickname, gender, description, department, remark, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   );
-  insertProfile.run(profileId, user.id, username, 'other', currentTime, currentTime);
+  insertProfile.run(profileId, user.id, profileName, email || null, nickname || null, profileGender, description || null, department || null, remark || null, currentTime, currentTime);
 
   db.prepare('UPDATE users SET profile_id = ? WHERE id = ?').run(profileId, user.id);
 

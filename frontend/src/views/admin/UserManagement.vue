@@ -152,27 +152,68 @@
       </template>
     </el-dialog>
 
-    <!-- Add User Dialog -->
-    <el-dialog v-model="showAddDialog" :title="$t('userManagement.addUserTitle')" width="440px" :close-on-click-modal="false">
-      <el-form label-position="top" class="dialog-form">
+  <!-- Add User Dialog -->
+  <el-dialog v-model="showAddDialog" :title="$t('userManagement.addUserTitle')" width="640px" :close-on-click-modal="false">
+    <el-form label-position="top" class="dialog-form">
+      <div class="form-row-2">
         <el-form-item :label="$t('userManagement.username')">
           <el-input :placeholder="$t('userManagement.enterUsername')" v-model="addForm.username" />
         </el-form-item>
         <el-form-item :label="$t('userManagement.password')">
           <el-input type="password" show-password :placeholder="$t('userManagement.enterPassword')" v-model="addForm.password" />
         </el-form-item>
-    <el-form-item :label="$t('userManagement.role')">
-      <el-select v-model="addForm.role" :placeholder="$t('userManagement.selectRole')" style="width: 100%">
-        <el-option :label="$t('userManagement.roleUser')" value="user" />
-        <el-option :label="$t('userManagement.roleAdmin')" value="admin" />
-      </el-select>
-    </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showAddDialog = false">{{ $t('userManagement.cancel') }}</el-button>
-        <el-button type="primary" @click="handleAddUser">{{ $t('userManagement.confirm') }}</el-button>
-      </template>
-    </el-dialog>
+      </div>
+      <el-form-item :label="$t('userManagement.role')">
+        <el-select v-model="addForm.role" :placeholder="$t('userManagement.selectRole')" style="width: 100%">
+          <el-option :label="$t('userManagement.roleUser')" value="user" />
+          <el-option :label="$t('userManagement.roleAdmin')" value="admin" />
+        </el-select>
+      </el-form-item>
+
+      <div class="profile-section-toggle" @click="showAddProfile = !showAddProfile">
+        <span>{{ $t('userManagement.addProfileSection') }}</span>
+        <svg :class="{ rotated: showAddProfile }" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+
+      <transition name="collapse">
+        <div v-if="showAddProfile" class="profile-fields">
+          <div class="form-row-3">
+            <el-form-item :label="$t('userManagement.profileName')">
+              <el-input :placeholder="$t('userManagement.enterProfileName')" v-model="addForm.name" />
+            </el-form-item>
+            <el-form-item :label="$t('userManagement.profileEmail')">
+              <el-input :placeholder="$t('userManagement.enterEmail')" v-model="addForm.email" />
+            </el-form-item>
+            <el-form-item :label="$t('userManagement.profileNickname')">
+              <el-input :placeholder="$t('userManagement.enterNickname')" v-model="addForm.nickname" />
+            </el-form-item>
+          </div>
+          <div class="form-row-2">
+            <el-form-item :label="$t('userManagement.profileGender')">
+              <el-select v-model="addForm.gender" :placeholder="$t('userManagement.selectGender')" style="width: 100%" clearable>
+                <el-option :label="$t('userManagement.genderMale')" value="male" />
+                <el-option :label="$t('userManagement.genderFemale')" value="female" />
+                <el-option :label="$t('userManagement.genderOther')" value="other" />
+              </el-select>
+            </el-form-item>
+            <el-form-item :label="$t('userManagement.profileDepartment')">
+              <el-input :placeholder="$t('userManagement.enterDepartment')" v-model="addForm.department" />
+            </el-form-item>
+          </div>
+          <el-form-item :label="$t('userManagement.profileDescription')">
+            <el-input type="textarea" :rows="2" :placeholder="$t('userManagement.enterDescription')" v-model="addForm.description" />
+          </el-form-item>
+          <el-form-item :label="$t('userManagement.profileRemark')">
+            <el-input type="textarea" :rows="2" :placeholder="$t('userManagement.enterRemark')" v-model="addForm.remark" />
+          </el-form-item>
+        </div>
+      </transition>
+    </el-form>
+    <template #footer>
+      <el-button @click="showAddDialog = false">{{ $t('userManagement.cancel') }}</el-button>
+      <el-button type="primary" @click="handleAddUser">{{ $t('userManagement.confirm') }}</el-button>
+    </template>
+  </el-dialog>
 
     <!-- Change Password Dialog -->
     <el-dialog v-model="showPasswordDialog" :title="$t('userManagement.changePasswordTitle')" width="440px" :close-on-click-modal="false">
@@ -274,7 +315,8 @@ const openDetailDialog = (user: UserItem) => {
 
 // Add User dialog
 const showAddDialog = ref(false)
-const addForm = ref({ username: '', password: '', role: 'user' })
+const showAddProfile = ref(false)
+const addForm = ref({ username: '', password: '', role: 'user', name: '', email: '', nickname: '', gender: '', description: '', department: '', remark: '' })
 
 const handleAddUser = async () => {
   if (!addForm.value.username || !addForm.value.password) {
@@ -283,11 +325,22 @@ const handleAddUser = async () => {
   }
   try {
     ensureExtensionConfig()
-    const resp = await userApi.register({ username: addForm.value.username, password: addForm.value.password, role: addForm.value.role })
+    const payload: Record<string, string> = {
+      username: addForm.value.username,
+      password: addForm.value.password,
+      role: addForm.value.role,
+    }
+    // Only send non-empty profile fields
+    const profileKeys = ['name', 'email', 'nickname', 'gender', 'description', 'department', 'remark'] as const
+    for (const key of profileKeys) {
+      if (addForm.value[key]) payload[key] = addForm.value[key]
+    }
+    const resp = await userApi.register(payload as any)
     if (resp.code === 0) {
       ElMessage.success($t('userManagement.createSuccess'))
       showAddDialog.value = false
-      addForm.value = { username: '', password: '', role: 'user' }
+      showAddProfile.value = false
+      addForm.value = { username: '', password: '', role: 'user', name: '', email: '', nickname: '', gender: '', description: '', department: '', remark: '' }
       await fetchUsers()
     } else {
       ElMessage.error(resp.message || $t('userManagement.createFailed'))
@@ -668,6 +721,68 @@ const formatGender = (gender?: string): string => {
 /* ===== Dialog ===== */
 .dialog-form {
   padding-top: 4px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 16px;
+}
+
+/* ===== Profile Section Toggle ===== */
+.profile-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0 6px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-400);
+  border-top: 1px solid var(--border-100);
+  margin-top: 4px;
+}
+
+.profile-section-toggle:hover {
+  color: var(--admin-accent, #3b82f6);
+}
+
+.profile-section-toggle svg {
+  transition: transform 0.2s;
+}
+
+.profile-section-toggle svg.rotated {
+  transform: rotate(180deg);
+}
+
+.profile-fields {
+  padding-top: 4px;
+}
+
+/* ===== Collapse Transition ===== */
+.collapse-enter-active,
+.collapse-leave-active {
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+
+.collapse-enter-from,
+.collapse-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
+.collapse-enter-to,
+.collapse-leave-from {
+  opacity: 1;
+  max-height: 600px;
 }
 
 .delete-msg {

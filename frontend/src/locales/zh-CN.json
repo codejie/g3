@@ -323,10 +323,18 @@
     "profileDescription": "描述",
     "profileRemark": "备注",
     "noProfile": "暂无资料信息",
-    "genderMale": "男",
-    "genderFemale": "女",
-    "genderOther": "其他"
-  },
+  "genderMale": "男",
+  "genderFemale": "女",
+  "genderOther": "其他",
+  "addProfileSection": "资料信息（可选）",
+  "enterProfileName": "请输入姓名",
+  "enterEmail": "请输入邮箱",
+  "enterNickname": "请输入昵称",
+  "selectGender": "请选择性别",
+  "enterDescription": "请输入描述",
+  "enterDepartment": "请输入部门",
+  "enterRemark": "请输入备注"
+},
   "opencodeConfig": {
     "title": "Agent配置",
     "refresh": "刷新",

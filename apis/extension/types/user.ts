@@ -57,6 +57,13 @@ export interface RegisterRequest extends BaseRequest {
   username: string
   password: string
   role?: string
+  name?: string
+  email?: string
+  nickname?: string
+  gender?: string
+  description?: string
+  department?: string
+  remark?: string
 }
 
 export interface RegisterResult {

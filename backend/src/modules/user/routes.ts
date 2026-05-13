@@ -63,7 +63,14 @@ const registerSchema = {
       requestId: { type: 'string' },
       username: { type: 'string', description: 'Username' },
       password: { type: 'string', description: 'Password' },
-      role: { type: 'string', description: 'User role (default: user)' }
+      role: { type: 'string', description: 'User role (default: user)' },
+      name: { type: 'string', description: 'Profile name (defaults to username)' },
+      email: { type: 'string', description: 'Email address' },
+      nickname: { type: 'string', description: 'Nickname' },
+      gender: { type: 'string', description: 'Gender (male/female/other, default: other)' },
+      description: { type: 'string', description: 'Description' },
+      department: { type: 'string', description: 'Department' },
+      remark: { type: 'string', description: 'Remark' }
     }
   },
   response: {
