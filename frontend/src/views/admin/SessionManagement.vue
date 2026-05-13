@@ -1,6 +1,17 @@
 <template>
-  <div class="session-management">
-    <!-- Toolbar: Filters -->
+<div class="session-management">
+  <!-- Auto-clean toggle -->
+  <div class="auto-clean-row">
+    <label class="auto-clean-label">
+      <input type="checkbox" class="auto-clean-checkbox" :checked="autoCleanEnabled" :disabled="autoCleanLoading" @change="toggleAutoClean" />
+      <span>{{ $t('sessionManagement.autoCleanLabel') }}</span>
+    </label>
+    <span v-if="autoCleanLoading" class="auto-clean-loading">
+      <el-icon class="is-loading" :size="12"><Loading /></el-icon>
+    </span>
+  </div>
+
+  <!-- Toolbar: Filters -->
     <div class="toolbar">
       <div class="filter-group">
         <el-select v-model="filters.bound" :placeholder="$t('sessionManagement.filterBound')" size="small" style="width: 130px">
@@ -148,6 +159,43 @@ const ensureOpenCodeConfig = () => {
   setOpenCodeConfig({ baseURL: opencodeURL })
 }
 
+// Auto-clean
+const autoCleanEnabled = ref(false)
+const autoCleanLoading = ref(false)
+
+const fetchAutoClean = async () => {
+  autoCleanLoading.value = true
+  try {
+    ensureExtensionConfig()
+    const resp = await extSessionApi.getAutoClean()
+    if (resp.code === 0 && resp.data) {
+      autoCleanEnabled.value = resp.data.enabled
+    }
+  } catch (error) {
+    console.error('[SessionManagement] Failed to fetch autoClean status:', error)
+  } finally {
+    autoCleanLoading.value = false
+  }
+}
+
+const toggleAutoClean = async () => {
+  const newValue = !autoCleanEnabled.value
+  autoCleanLoading.value = true
+  try {
+    ensureExtensionConfig()
+    const resp = await extSessionApi.setAutoClean({ enabled: newValue })
+    if (resp.code === 0 && resp.data) {
+      autoCleanEnabled.value = resp.data.enabled
+      ElMessage.success(autoCleanEnabled.value ? $t('sessionManagement.autoCleanEnabled') : $t('sessionManagement.autoCleanDisabled'))
+    }
+  } catch (error) {
+    console.error('[SessionManagement] Failed to set autoClean:', error)
+    ElMessage.error($t('sessionManagement.autoCleanFailed'))
+  } finally {
+    autoCleanLoading.value = false
+  }
+}
+
 // Data
 const sessions = ref<SessionItem[]>([])
 const loading = ref(false)
@@ -252,6 +300,7 @@ const fetchSessions = async () => {
 }
 
 onMounted(() => {
+  fetchAutoClean()
   fetchSessions()
 })
 
@@ -352,6 +401,34 @@ const formatStatus = (status: string): string => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* ===== Auto-clean Row ===== */
+.auto-clean-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auto-clean-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-200);
+  cursor: pointer;
+  user-select: none;
+}
+
+.auto-clean-checkbox {
+  cursor: pointer;
+  accent-color: var(--admin-accent, #3b82f6);
+}
+
+.auto-clean-loading {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-400);
 }
 
 /* ===== Toolbar ===== */

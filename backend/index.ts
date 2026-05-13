@@ -94,8 +94,32 @@ fastify.get('/', async () => {
   }
 };
 
+// --- Auto-clean timer ---
+const AUTO_CLEAN_CHECK_INTERVAL = 60_000;
+const AUTO_CLEAN_RUN_INTERVAL = 30 * 60_000;
+
+let lastAutoCleanTime = 0;
+
+const autoCleanTimer = setInterval(async () => {
+const { getAutoCleanEnabled, cleanupUnboundSessions } = await import('./src/modules/session/handler.js');
+if (!getAutoCleanEnabled()) return;
+
+const now = Date.now();
+if (now - lastAutoCleanTime < AUTO_CLEAN_RUN_INTERVAL) return;
+
+lastAutoCleanTime = now;
+try {
+  await cleanupUnboundSessions();
+} catch (e: any) {
+  console.error('[AutoClean] Timer error:', e.message);
+}
+}, AUTO_CLEAN_CHECK_INTERVAL);
+
+autoCleanTimer.unref();
+
 const gracefulShutdown = async (signal: string) => {
   console.log(`Received ${signal}, shutting down gracefully...`);
+  clearInterval(autoCleanTimer);
   await fastify.close();
   process.exit(0);
 };

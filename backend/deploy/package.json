@@ -11,18 +11,20 @@
     "build": "tsc",
     "start": "tsx index.ts",
     "start:dist": "node dist/index.js",
-    "build:deploy": "npm run build && rm -rf deploy && mkdir deploy && cp -r dist deploy/dist && cp package.json deploy/package.json && cp -L .env deploy/.env 2>/dev/null; echo 'Deploy directory ready: deploy/'",
+    "build:deploy": "npm run build && rm -rf deploy && mkdir deploy && cp -r dist deploy/dist && mv deploy/dist/src/config/schema.release.js deploy/dist/src/config/schema.js && cp package.json deploy/package.json && cp -L .env deploy/.env 2>/dev/null; echo 'Deploy directory ready: deploy/'",
     "deploy:install": "cd deploy && npm install --omit=dev && cd ..",
     "start:deploy": "node deploy/dist/index.js"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
     "@fastify/multipart": "^10.0.0",
+    "archiver": "^8.0.0",
     "better-sqlite3": "^9.6.0",
     "fastify": "^5.8.5",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/archiver": "^7.0.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.6.0",
     "tsx": "^4.21.0",

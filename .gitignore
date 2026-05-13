@@ -8,3 +8,4 @@ backend/data
 spec/opencode.json
 spec/config.json
 *.tar.gz
+docs/

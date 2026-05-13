@@ -418,7 +418,11 @@
     "deleteSuccess": "Session cleaned",
     "deleteFailed": "Failed to clean",
     "batchDeleteSuccess": "{count} sessions cleaned",
-    "batchDeleteFailed": "Batch clean failed",
-    "noProject": "—"
-  }
+  "batchDeleteFailed": "Batch clean failed",
+  "noProject": "—",
+  "autoCleanLabel": "Auto-clean unbound sessions every 30 min",
+  "autoCleanEnabled": "Auto-clean enabled",
+  "autoCleanDisabled": "Auto-clean disabled",
+  "autoCleanFailed": "Failed to set auto-clean"
+}
 }

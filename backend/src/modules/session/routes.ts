@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { listSessionsHandler } from './handler.js';
+import { listSessionsHandler, getAutoCleanHandler, setAutoCleanHandler } from './handler.js';
 import { authenticateAdmin } from '../../middleware/auth.js';
 
 const listSessionsSchema = {
@@ -38,8 +38,58 @@ const listSessionsSchema = {
   },
 };
 
+const getAutoCleanSchema = {
+  description: 'Get auto-clean enabled status',
+  tags: ['Session'],
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        code: { type: 'number' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            enabled: { type: 'boolean' },
+          },
+        },
+      },
+    },
+  },
+};
+
+const setAutoCleanSchema = {
+  description: 'Set auto-clean enabled status',
+  tags: ['Session'],
+  body: {
+    type: 'object',
+    required: ['enabled'],
+    properties: {
+      requestId: { type: 'string' },
+      enabled: { type: 'boolean', description: 'Enable or disable auto-clean' },
+    },
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        code: { type: 'number' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            enabled: { type: 'boolean' },
+          },
+        },
+      },
+    },
+  },
+};
+
 export async function sessionRoutes(fastify: FastifyInstance) {
   fastify.post('/api/session/list', { preHandler: [authenticateAdmin], schema: listSessionsSchema }, listSessionsHandler);
+  fastify.post('/api/session/auto-clean/get', { preHandler: [authenticateAdmin], schema: getAutoCleanSchema }, getAutoCleanHandler);
+  fastify.post('/api/session/auto-clean/set', { preHandler: [authenticateAdmin], schema: setAutoCleanSchema }, setAutoCleanHandler);
 }
 
 export default sessionRoutes;

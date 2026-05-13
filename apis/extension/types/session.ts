@@ -19,3 +19,21 @@ export interface GetSessionsResult {
 }
 
 export type GetSessionsResponse = BaseResponse<GetSessionsResult>
+
+export interface GetAutoCleanRequest extends BaseRequest {}
+
+export interface GetAutoCleanResult {
+  enabled: boolean
+}
+
+export type GetAutoCleanResponse = BaseResponse<GetAutoCleanResult>
+
+export interface SetAutoCleanRequest extends BaseRequest {
+  enabled: boolean
+}
+
+export interface SetAutoCleanResult {
+  enabled: boolean
+}
+
+export type SetAutoCleanResponse = BaseResponse<SetAutoCleanResult>

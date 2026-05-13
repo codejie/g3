@@ -418,7 +418,11 @@
     "deleteSuccess": "Session已清理",
     "deleteFailed": "清理失败",
     "batchDeleteSuccess": "{count} 个Session已清理",
-    "batchDeleteFailed": "批量清理失败",
-    "noProject": "—"
-  }
+  "batchDeleteFailed": "批量清理失败",
+  "noProject": "—",
+  "autoCleanLabel": "定时清理未关联项目的Sessions（每30分钟）",
+  "autoCleanEnabled": "已开启定时清理",
+  "autoCleanDisabled": "已关闭定时清理",
+  "autoCleanFailed": "设置定时清理失败"
+}
 }
