@@ -187,6 +187,13 @@ const kwRefactorId = deterministicUUID('keyword', 'refactor')
 const kwApiId = deterministicUUID('keyword', 'api')
 const kwExplainId = deterministicUUID('keyword', 'explain')
 
+const ollamaProviderId = deterministicUUID('provider', 'ollama')
+const qwen3ModelId = deterministicUUID('model', 'qwen3:8b')
+
+function deterministicOptionUUID(parentId: string, key: string): string {
+  return deterministicUUID(`option:${parentId}`, key)
+}
+
 db.exec(`
 INSERT OR IGNORE INTO profiles (id, user_id, name, email, nickname, avatar, gender, description, department, remark, created_at, updated_at)
 VALUES
@@ -235,6 +242,28 @@ VALUES
   ('${deterministicUUID('prompt', 'explain-algo')}', '${kwExplainId}', '算法讲解', '帮我讲解算法的实现原理、时间复杂度和优化思路。算法是：', '讲解算法原理', 0, 8, ${currentTime}, ${currentTime});
 
 INSERT OR IGNORE INTO system_config (key, value, updated_at) VALUES ('autoCleanEnabled', '0', ${currentTime});
+
+INSERT OR IGNORE INTO providers (id, provider_id, npm, builtin, disabled, created_at, updated_at)
+VALUES
+  ('${ollamaProviderId}', 'ollama', '@ai-sdk/openai-compatible', 0, 0, ${currentTime}, ${currentTime});
+
+INSERT OR IGNORE INTO provider_options (id, provider_id, key, value)
+VALUES
+('${deterministicOptionUUID('ollama', 'name')}', '${ollamaProviderId}', 'name', 'Ollama'),
+('${deterministicOptionUUID('ollama', 'baseURL')}', '${ollamaProviderId}', 'baseURL', 'http://localhost:11434');
+
+INSERT OR IGNORE INTO models (id, provider_id, model_id, disabled, created_at, updated_at)
+VALUES
+('${qwen3ModelId}', '${ollamaProviderId}', 'qwen3-7b', 0, ${currentTime}, ${currentTime});
+
+INSERT OR IGNORE INTO model_options (id, model_id, key, value)
+VALUES
+('${deterministicOptionUUID('qwen3-7b', 'name')}', '${qwen3ModelId}', 'name', 'Qwen3 7B'),
+('${deterministicOptionUUID('qwen3-7b', 'description')}', '${qwen3ModelId}', 'description', 'qwen3'),
+('${deterministicOptionUUID('qwen3-7b', 'context_size')}', '${qwen3ModelId}', 'context_size', '32768');
+
 `)
+
+
 
 export default db

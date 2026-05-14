@@ -19,10 +19,10 @@ echo "[1/4] Building backend..."
 cd "$PROJECT_DIR/backend"
 npm run build:deploy
 
-# 2. Package backend.tar.gz (dist/ + package.json)
+# 2. Package backend.tar.gz (from deploy/ dir — schema.js already swapped to release)
 echo "[2/4] Packaging backend.tar.gz..."
-cd "$PROJECT_DIR/backend"
-tar -czf "$SCRIPT_DIR/backend.tar.gz" dist package.json
+cd "$PROJECT_DIR/backend/deploy"
+tar -czf "$SCRIPT_DIR/backend.tar.gz" dist package.json .env
 
 # 3. Build frontend
 echo "[3/4] Building frontend..."
