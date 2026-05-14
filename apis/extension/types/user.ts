@@ -83,6 +83,7 @@ export interface ProfileResult {
 export type ProfileResponse = BaseResponse<ProfileResult>
 
 export interface UpdateProfileRequest extends BaseRequest {
+  user_id?: string
   name?: string
   email?: string
   nickname?: string
@@ -132,3 +133,15 @@ export interface GetUsersResult {
 }
 
 export type GetUsersResponse = BaseResponse<GetUsersResult>
+
+export interface UpdateUserRequest extends BaseRequest {
+  id: string
+  role?: string
+  disabled?: number
+}
+
+export interface UpdateUserResult {
+  id: string
+}
+
+export type UpdateUserResponse = BaseResponse<UpdateUserResult>

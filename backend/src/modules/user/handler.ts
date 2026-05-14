@@ -3,7 +3,7 @@ import userModel from './model.js';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../../utils/db.js';
 import { hashPassword } from '../../config/schema.js';
-import type { LoginRequest, RegisterRequest, ProfileRequest, Profile } from '../../apis/extension/types/user';
+import type { LoginRequest, RegisterRequest, ProfileRequest, UpdateProfileRequest, Profile } from '../../apis/extension/types/user';
 import { createToken, saveToken, deleteToken } from '../../middleware/auth.js';
 
 const RESPONSE_CODES = {
@@ -311,4 +311,75 @@ export async function changePasswordHandler(request: FastifyRequest, reply: Fast
   deleteTokens.run(id);
 
   return reply.send({ code: RESPONSE_CODES.SUCCESS });
+}
+
+export async function updateProfileHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { user_id, name, email, nickname, gender, description, department, remark } = request.body as UpdateProfileRequest;
+
+  const targetUserId = user_id || (request as any).userId;
+  if (!targetUserId) {
+    return reply.send({ code: RESPONSE_CODES.UNAUTHORIZED, message: 'User ID required' });
+  }
+
+  const user = userModel.findById(targetUserId);
+  if (!user || !user.profile_id) {
+    return reply.send({ code: RESPONSE_CODES.NOT_FOUND, message: 'User or profile not found' });
+  }
+
+  const profileId = user.profile_id;
+  const currentTime = Math.floor(Date.now() / 1000);
+
+  const fields: string[] = [];
+  const values: any[] = [];
+
+  if (name !== undefined) { fields.push('name = ?'); values.push(name); }
+  if (email !== undefined) { fields.push('email = ?'); values.push(email || null); }
+  if (nickname !== undefined) { fields.push('nickname = ?'); values.push(nickname || null); }
+  if (gender !== undefined) { fields.push('gender = ?'); values.push(gender || null); }
+  if (description !== undefined) { fields.push('description = ?'); values.push(description || null); }
+  if (department !== undefined) { fields.push('department = ?'); values.push(department || null); }
+  if (remark !== undefined) { fields.push('remark = ?'); values.push(remark || null); }
+
+  if (fields.length === 0) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'No fields to update' });
+  }
+
+  fields.push('updated_at = ?');
+  values.push(currentTime);
+  values.push(profileId);
+
+  db.prepare(`UPDATE profiles SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+
+  return reply.send({ code: RESPONSE_CODES.SUCCESS, data: { id: profileId } });
+}
+
+export async function updateUserHandler(request: FastifyRequest, reply: FastifyReply) {
+  const { id, role, disabled } = request.body as { id?: string; role?: string; disabled?: number };
+
+  if (!id) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'User ID is required' });
+  }
+
+  const user = userModel.findById(id);
+  if (!user) {
+    return reply.send({ code: RESPONSE_CODES.NOT_FOUND, message: 'User not found' });
+  }
+
+  const fields: string[] = [];
+  const values: any[] = [];
+
+  if (role !== undefined) { fields.push('role = ?'); values.push(role); }
+  if (disabled !== undefined) { fields.push('disabled = ?'); values.push(disabled); }
+
+  if (fields.length === 0) {
+    return reply.send({ code: RESPONSE_CODES.INVALID_REQUEST, message: 'No fields to update' });
+  }
+
+  fields.push('updated_at = ?');
+  values.push(Math.floor(Date.now() / 1000));
+  values.push(id);
+
+  db.prepare(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+
+  return reply.send({ code: RESPONSE_CODES.SUCCESS, data: { id } });
 }

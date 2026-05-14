@@ -17,6 +17,8 @@ import type {
   ChangePasswordResponse,
   GetUsersRequest,
   GetUsersResponse,
+  UpdateUserRequest,
+  UpdateUserResponse,
 } from '../types/user'
 
 export const userApi = {
@@ -33,6 +35,8 @@ export const userApi = {
   updateProfile: (data: UpdateProfileRequest) => post<UpdateProfileResponse>('user/profile/update', data),
 
   list: (data?: GetUsersRequest) => post<GetUsersResponse>('user/list', data ?? {}),
+
+  update: (data: UpdateUserRequest) => post<UpdateUserResponse>('user/update', data),
 
   delete: (data: DeleteUserRequest) => post<DeleteUserResponse>('user/delete', data),
 

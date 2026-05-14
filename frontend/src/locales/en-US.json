@@ -325,7 +325,13 @@
     "noProfile": "No profile info",
     "genderMale": "Male",
     "genderFemale": "Female",
-    "genderOther": "Other"
+    "genderOther": "Other",
+    "edit": "Edit",
+    "editTitle": "Edit User",
+    "editSuccess": "User info updated",
+    "editFailed": "Failed to update user info",
+    "enableUser": "Enable",
+    "disableUser": "Disable"
   },
   "opencodeConfig": {
     "title": "Agent Config",

@@ -68,20 +68,24 @@
                 <span class="date-text">{{ formatDate(user.created_at) }}</span>
               </td>
               <td>
-                <div class="action-btns">
-                  <button class="action-btn detail" @click="openDetailDialog(user)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    {{ $t('userManagement.detail') }}
-                  </button>
-                  <button class="action-btn password" @click="openPasswordDialog(user)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    {{ $t('userManagement.changePassword') }}
-                  </button>
-                  <button class="action-btn delete" @click="openDeleteConfirm(user)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    {{ $t('userManagement.delete') }}
-                  </button>
-                </div>
+          <div class="action-btns">
+          <button class="action-btn detail" @click="openDetailDialog(user)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            {{ $t('userManagement.detail') }}
+          </button>
+          <button class="action-btn edit" @click="openEditDialog(user)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            {{ $t('userManagement.edit') }}
+          </button>
+          <button class="action-btn password" @click="openPasswordDialog(user)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            {{ $t('userManagement.changePassword') }}
+          </button>
+          <button class="action-btn delete" @click="openDeleteConfirm(user)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            {{ $t('userManagement.delete') }}
+          </button>
+          </div>
               </td>
             </tr>
           </tbody>
@@ -151,6 +155,72 @@
         <el-button @click="showDetailDialog = false">{{ $t('userManagement.close') }}</el-button>
       </template>
     </el-dialog>
+
+  <!-- Edit User Dialog -->
+  <el-dialog v-model="showEditDialog" :title="$t('userManagement.editTitle')" width="640px" :close-on-click-modal="false">
+    <el-form label-position="top" class="dialog-form">
+      <div class="form-row-2">
+        <el-form-item :label="$t('userManagement.username')">
+          <el-input :model-value="editTarget?.username" disabled />
+        </el-form-item>
+        <el-form-item :label="$t('userManagement.role')">
+          <el-select v-model="editForm.role" style="width: 100%">
+            <el-option :label="$t('userManagement.roleUser')" value="user" />
+            <el-option :label="$t('userManagement.roleAdmin')" value="admin" />
+          </el-select>
+        </el-form-item>
+      </div>
+      <el-form-item :label="$t('userManagement.status')">
+        <el-select v-model="editForm.disabled" style="width: 100%">
+          <el-option :label="$t('userManagement.statusEnabled')" :value="0" />
+          <el-option :label="$t('userManagement.statusDisabled')" :value="1" />
+        </el-select>
+      </el-form-item>
+
+      <div class="profile-section-toggle" @click="showEditProfile = !showEditProfile">
+        <span>{{ $t('userManagement.profileInfo') }}</span>
+        <svg :class="{ rotated: showEditProfile }" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+
+      <transition name="collapse">
+        <div v-if="showEditProfile" class="profile-fields">
+          <div class="form-row-3">
+            <el-form-item :label="$t('userManagement.profileName')">
+              <el-input :placeholder="$t('userManagement.enterProfileName')" v-model="editForm.name" />
+            </el-form-item>
+            <el-form-item :label="$t('userManagement.profileEmail')">
+              <el-input :placeholder="$t('userManagement.enterEmail')" v-model="editForm.email" />
+            </el-form-item>
+            <el-form-item :label="$t('userManagement.profileNickname')">
+              <el-input :placeholder="$t('userManagement.enterNickname')" v-model="editForm.nickname" />
+            </el-form-item>
+          </div>
+          <div class="form-row-2">
+            <el-form-item :label="$t('userManagement.profileGender')">
+              <el-select v-model="editForm.gender" :placeholder="$t('userManagement.selectGender')" style="width: 100%" clearable>
+                <el-option :label="$t('userManagement.genderMale')" value="male" />
+                <el-option :label="$t('userManagement.genderFemale')" value="female" />
+                <el-option :label="$t('userManagement.genderOther')" value="other" />
+              </el-select>
+            </el-form-item>
+            <el-form-item :label="$t('userManagement.profileDepartment')">
+              <el-input :placeholder="$t('userManagement.enterDepartment')" v-model="editForm.department" />
+            </el-form-item>
+          </div>
+          <el-form-item :label="$t('userManagement.profileDescription')">
+            <el-input type="textarea" :rows="2" :placeholder="$t('userManagement.enterDescription')" v-model="editForm.description" />
+          </el-form-item>
+          <el-form-item :label="$t('userManagement.profileRemark')">
+            <el-input type="textarea" :rows="2" :placeholder="$t('userManagement.enterRemark')" v-model="editForm.remark" />
+          </el-form-item>
+        </div>
+      </transition>
+    </el-form>
+    <template #footer>
+      <el-button @click="showEditDialog = false">{{ $t('userManagement.cancel') }}</el-button>
+      <el-button type="primary" @click="handleEditUser">{{ $t('userManagement.confirm') }}</el-button>
+    </template>
+  </el-dialog>
 
   <!-- Add User Dialog -->
   <el-dialog v-model="showAddDialog" :title="$t('userManagement.addUserTitle')" width="640px" :close-on-click-modal="false">
@@ -317,6 +387,56 @@ const openDetailDialog = (user: UserItem) => {
 const showAddDialog = ref(false)
 const showAddProfile = ref(false)
 const addForm = ref({ username: '', password: '', role: 'user', name: '', email: '', nickname: '', gender: '', description: '', department: '', remark: '' })
+
+// Edit User dialog
+const showEditDialog = ref(false)
+const showEditProfile = ref(true)
+const editTarget = ref<UserItem | null>(null)
+const editForm = ref({ role: 'user', disabled: 0, name: '', email: '', nickname: '', gender: '', description: '', department: '', remark: '' })
+
+const openEditDialog = (user: UserItem) => {
+  editTarget.value = user
+  editForm.value = {
+    role: user.role,
+    disabled: user.disabled,
+    name: user.profile?.name || '',
+    email: user.profile?.email || '',
+    nickname: user.profile?.nickname || '',
+    gender: user.profile?.gender || '',
+    description: user.profile?.description || '',
+    department: user.profile?.department || '',
+    remark: user.profile?.remark || '',
+  }
+  showEditProfile.value = true
+  showEditDialog.value = true
+}
+
+const handleEditUser = async () => {
+  if (!editTarget.value) return
+  try {
+    ensureExtensionConfig()
+    const userId = editTarget.value.id
+    const profileData: Record<string, string> = { user_id: userId }
+    const profileKeys = ['name', 'email', 'nickname', 'gender', 'description', 'department', 'remark'] as const
+    for (const key of profileKeys) {
+      profileData[key] = editForm.value[key]
+    }
+    const [profileResp, userResp] = await Promise.all([
+      userApi.updateProfile(profileData as any),
+      userApi.update({ id: userId, role: editForm.value.role, disabled: editForm.value.disabled }),
+    ])
+    if (profileResp.code === 0 && userResp.code === 0) {
+      ElMessage.success($t('userManagement.editSuccess'))
+      showEditDialog.value = false
+      await fetchUsers()
+    } else {
+      ElMessage.error(profileResp.message || userResp.message || $t('userManagement.editFailed'))
+    }
+  } catch (error) {
+    console.error('[UserManagement] Edit user failed:', error)
+    ElMessage.error($t('userManagement.editFailed'))
+  }
+}
 
 const handleAddUser = async () => {
   if (!addForm.value.username || !addForm.value.password) {
@@ -629,6 +749,14 @@ const formatGender = (gender?: string): string => {
 
 .action-btn.detail:hover {
   background: rgba(59, 130, 246, 0.08);
+}
+
+.action-btn.edit {
+  color: #8b5cf6;
+}
+
+.action-btn.edit:hover {
+  background: rgba(139, 92, 246, 0.08);
 }
 
 .action-btn.password {

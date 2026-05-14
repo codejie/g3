@@ -333,7 +333,13 @@
   "selectGender": "请选择性别",
   "enterDescription": "请输入描述",
   "enterDepartment": "请输入部门",
-  "enterRemark": "请输入备注"
+  "enterRemark": "请输入备注",
+  "edit": "编辑",
+  "editTitle": "编辑用户",
+  "editSuccess": "用户信息已更新",
+  "editFailed": "更新用户信息失败",
+  "enableUser": "启用",
+  "disableUser": "禁用"
 },
   "opencodeConfig": {
     "title": "Agent配置",

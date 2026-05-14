@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { loginHandler, registerHandler, logoutHandler, profileHandler, listUsersHandler, deleteUserHandler, changePasswordHandler } from './handler.js';
+import { loginHandler, registerHandler, logoutHandler, profileHandler, listUsersHandler, deleteUserHandler, changePasswordHandler, updateProfileHandler, updateUserHandler } from './handler.js';
 import { authenticateUser, authenticateAdmin } from '../../middleware/auth.js';
 
 const loginSchema = {
@@ -252,12 +252,79 @@ const changePasswordSchema = {
   },
 };
 
+const updateProfileSchema = {
+  description: 'Update user profile',
+  tags: ['User'],
+  body: {
+    type: 'object',
+    properties: {
+      requestId: { type: 'string' },
+      user_id: { type: 'string', description: 'Target user ID (admin only, defaults to token user)' },
+      name: { type: 'string', description: 'Profile name' },
+      email: { type: 'string', description: 'Email address' },
+      nickname: { type: 'string', description: 'Nickname' },
+      avatar: { type: 'string', description: 'Avatar URL' },
+      gender: { type: 'string', description: 'Gender (male/female/other)' },
+      description: { type: 'string', description: 'Description' },
+      department: { type: 'string', description: 'Department' },
+      remark: { type: 'string', description: 'Remark' },
+    },
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        code: { type: 'number' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+        },
+      },
+    },
+  },
+};
+
+const updateUserSchema = {
+  description: 'Update user (role, status)',
+  tags: ['User'],
+  body: {
+    type: 'object',
+    required: ['id'],
+    properties: {
+      requestId: { type: 'string' },
+      id: { type: 'string', description: 'User ID' },
+      role: { type: 'string', description: 'User role (admin/user)' },
+      disabled: { type: 'number', description: 'Disabled status (0=enabled, 1=disabled)' },
+    },
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        code: { type: 'number' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+        },
+      },
+    },
+  },
+};
+
 export async function userRoutes(fastify: FastifyInstance) {
   fastify.post('/api/user/login', { schema: loginSchema }, loginHandler);
   fastify.post('/api/user/register', { schema: registerSchema }, registerHandler);
   fastify.post('/api/user/logout', { preHandler: [authenticateUser], schema: logoutSchema }, logoutHandler);
   fastify.post('/api/user/profile', { preHandler: [authenticateUser], schema: profileSchema }, profileHandler);
+  fastify.post('/api/user/profile/update', { preHandler: [authenticateUser], schema: updateProfileSchema }, updateProfileHandler);
   fastify.post('/api/user/list', { preHandler: [authenticateAdmin], schema: listUsersSchema }, listUsersHandler);
+  fastify.post('/api/user/update', { preHandler: [authenticateAdmin], schema: updateUserSchema }, updateUserHandler);
   fastify.post('/api/user/delete', { preHandler: [authenticateAdmin], schema: deleteUserSchema }, deleteUserHandler);
   fastify.post('/api/user/password', { preHandler: [authenticateAdmin], schema: changePasswordSchema }, changePasswordHandler);
 }
