@@ -165,7 +165,7 @@
     "logView": "日志查看",
     "skillsManagement": "Skills管理",
     "sessionManagement": "Session管理",
-    "opencodeConfig": "Agent配置",
+    "opencodeConfig": "Agent配置管理",
     "systemConfig": "系统配置",
     "brand": "AppGenius Admin",
     "logout": "登出",
